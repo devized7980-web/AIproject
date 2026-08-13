@@ -1,7 +1,3 @@
-/
-expert_system_advanced.pl
-
-
 :- dynamic observation/6.
 
 % observation(Object, DistanceMetres, TTCSeconds, InLane, Confidence, BoxHeightRatio).
