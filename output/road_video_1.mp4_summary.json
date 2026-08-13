@@ -1,0 +1,28 @@
+{
+  "video": "road_video_1.mp4.MP4",
+  "frames": 363,
+  "total_detections": 799,
+  "risk_counts": {
+    "SAFE": 401,
+    "CAUTION": 210,
+    "WARNING": 141,
+    "CRITICAL": 47
+  },
+  "object_counts": {
+    "person": 155,
+    "car": 490,
+    "motorcycle": 2,
+    "bench": 3,
+    "bus": 90,
+    "truck": 53,
+    "traffic light": 2,
+    "giraffe": 3,
+    "bicycle": 1
+  },
+  "incidents": 14,
+  "minimum_ttc_s": 0.633,
+  "processing_seconds": 17.82,
+  "average_processing_fps": 20.39,
+  "detection_interval": 2,
+  "limitations": "Distance and TTC are monocular estimates and require camera calibration."
+}
