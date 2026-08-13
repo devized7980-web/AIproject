@@ -1,0 +1,20 @@
+{
+  "video": "road_video_3.mp4.mp4",
+  "frames": 692,
+  "total_detections": 87,
+  "risk_counts": {
+    "SAFE": 69,
+    "WARNING": 15,
+    "CRITICAL": 3
+  },
+  "object_counts": {
+    "pothole": 85,
+    "frisbee": 2
+  },
+  "incidents": 11,
+  "minimum_ttc_s": 1.727,
+  "processing_seconds": 34.84,
+  "average_processing_fps": 19.86,
+  "detection_interval": 2,
+  "limitations": "Distance and TTC are monocular estimates and require camera calibration."
+}
