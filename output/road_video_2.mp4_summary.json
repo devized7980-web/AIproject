@@ -1,0 +1,30 @@
+{
+  "video": "road_video_2.mp4.MP4",
+  "frames": 834,
+  "total_detections": 2496,
+  "risk_counts": {
+    "SAFE": 2055,
+    "CAUTION": 196,
+    "WARNING": 163,
+    "CRITICAL": 82
+  },
+  "object_counts": {
+    "motorcycle": 25,
+    "car": 2159,
+    "person": 6,
+    "alligator": 34,
+    "truck": 153,
+    "bus": 92,
+    "fire hydrant": 5,
+    "potted plant": 16,
+    "bench": 2,
+    "transverse": 3,
+    "stop sign": 1
+  },
+  "incidents": 50,
+  "minimum_ttc_s": 0.302,
+  "processing_seconds": 40.27,
+  "average_processing_fps": 20.7,
+  "detection_interval": 2,
+  "limitations": "Distance and TTC are monocular estimates and require camera calibration."
+}
