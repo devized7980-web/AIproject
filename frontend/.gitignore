@@ -1,0 +1,5 @@
+node_modules
+dist
+.DS_Store
+public/videos/*.mp4
+public/videos/*.MP4

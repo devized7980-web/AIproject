@@ -29,10 +29,10 @@ except Exception:
 
 
 ROOT = Path(__file__).resolve().parent
-COMMON_MODEL_PATH = ROOT / "models" / "yolo11n.pt"
-CUSTOM_MODEL_PATH = ROOT / "models" / "best.pt"
-PROLOG_FILE = ROOT / "expert_system_advanced.pl"
-VIDEO_FOLDER = ROOT / "videos"
+COMMON_MODEL_PATH = ROOT / "yolo11n.pt"
+CUSTOM_MODEL_PATH = ROOT / "best.pt"
+PROLOG_FILE = ROOT / "expert_system.pl"
+VIDEO_FOLDER = ROOT
 OUTPUT_FOLDER = ROOT / "output"
 INCIDENT_FOLDER = OUTPUT_FOLDER / "incidents"
 
@@ -532,6 +532,7 @@ def process_video(path: Path, common: YOLO, custom: YOLO, expert: PrologRiskEngi
         csv_writer = csv.writer(f)
         csv_writer.writerow([
             "frame", "video_time_s", "object", "source", "confidence",
+            "x1", "y1", "x2", "y2",
             "distance_m", "closing_speed_mps", "ttc_s", "lane_overlap",
             "in_lane", "risk", "action", "incident_image"
         ])
@@ -682,6 +683,7 @@ def process_video(path: Path, common: YOLO, custom: YOLO, expert: PrologRiskEngi
                         d.name,
                         d.source,
                         round(d.confidence, 4),
+                        d.x1, d.y1, d.x2, d.y2,
                         d.distance_m,
                         round(d.closing_speed_mps, 3),
                         "" if not math.isfinite(d.ttc_s) else round(d.ttc_s, 3),
