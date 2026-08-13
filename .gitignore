@@ -1,0 +1,23 @@
+# Python environments
+.venv/
+.venv312/
+venv/
+
+# Python cache
+__pycache__/
+*.py[cod]
+
+# Testing
+.coverage
+.coverage.*
+.pytest_cache/
+htmlcov/
+
+# Generated outputs
+output/
+
+# macOS
+.DS_Store
+
+# VS Code
+.vscode/
