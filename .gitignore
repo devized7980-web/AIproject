@@ -6,6 +6,7 @@ venv/
 # Python cache
 __pycache__/
 *.py[cod]
+*.pyc
 
 # Testing
 .coverage
@@ -16,8 +17,19 @@ htmlcov/
 # Generated outputs
 output/
 
+# Frontend build artifacts
+frontend/dist/
+frontend/node_modules/
+
 # macOS
 .DS_Store
 
 # VS Code
 .vscode/
+
+# Large local demo videos
+videos/road_video_4.mp4
+videos/road_video_5.mp4
+videos/road_video_6.mp4
+videos/road_video_7.mp4
+videos/road_video_8.mp4

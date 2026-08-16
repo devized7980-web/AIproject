@@ -34,7 +34,7 @@ class MockProlog:
             finally:
                 # leave _in_use True until decision finishes
                 pass
-        if q.startswith("decision"):
+        elif q.startswith("decision"):
             time.sleep(0.02)
             val = self.behavior.get("decision", [])
             # clear in_use when decision completes
@@ -71,7 +71,7 @@ class PrologTests(unittest.TestCase):
         )
 
     def test_successful_prolog_decision(self):
-        mock = MockProlog({"decision": [{"Level": "warning", "Action": "slow_down"}]})
+        mock = MockProlog({"decision": [{"Level": "warning", "Action": "slow_down", "RuleID": "vehicle_following_distance", "Explanation": "Reduce speed and increase following distance."}]})
         main.Prolog = lambda: None  # placeholder class
         engine = main.PrologRiskEngine.__new__(main.PrologRiskEngine)
         engine.available = True
@@ -79,9 +79,12 @@ class PrologTests(unittest.TestCase):
         engine._prolog_lock = threading.Lock()
 
         d = self._make_detection()
-        level, action = main.PrologRiskEngine.decide(engine, d)
+        level, action, rule_id, explanation, source = main.PrologRiskEngine.decide(engine, d)
         self.assertEqual(level, "WARNING")
         self.assertIn("SLOW", action)
+        self.assertEqual(rule_id, "vehicle_following_distance")
+        self.assertIn("Reduce", explanation)
+        self.assertEqual(source, "prolog")
 
     def test_query_returns_no_result(self):
         mock = MockProlog({"decision": []})
@@ -92,9 +95,10 @@ class PrologTests(unittest.TestCase):
         engine._prolog_lock = threading.Lock()
 
         d = self._make_detection()
-        level, action = main.PrologRiskEngine.decide(engine, d)
+        level, action, rule_id, explanation, source = main.PrologRiskEngine.decide(engine, d)
         # should fallback to Python logic
         self.assertIsInstance(level, str)
+        self.assertEqual(source, "python_fallback")
 
     def test_assertion_failure(self):
         mock = MockProlog({"assertz": RuntimeError("assert fail")})
@@ -105,8 +109,9 @@ class PrologTests(unittest.TestCase):
         engine._prolog_lock = threading.Lock()
 
         d = self._make_detection()
-        level, action = main.PrologRiskEngine.decide(engine, d)
+        level, action, rule_id, explanation, source = main.PrologRiskEngine.decide(engine, d)
         self.assertIsInstance(level, str)
+        self.assertEqual(source, "python_fallback")
 
     def test_decision_query_failure(self):
         mock = MockProlog({"decision": RuntimeError("query fail")})
@@ -117,11 +122,12 @@ class PrologTests(unittest.TestCase):
         engine._prolog_lock = threading.Lock()
 
         d = self._make_detection()
-        level, action = main.PrologRiskEngine.decide(engine, d)
+        level, action, rule_id, explanation, source = main.PrologRiskEngine.decide(engine, d)
         self.assertIsInstance(level, str)
+        self.assertEqual(source, "python_fallback")
 
     def test_cleanup_failure_logged(self):
-        mock = MockProlog({"decision": [{"Level": "warning", "Action": "ok"}]}, simulate_cleanup_failure=True)
+        mock = MockProlog({"decision": [{"Level": "warning", "Action": "ok", "RuleID": "test_rule", "Explanation": "ok"}]}, simulate_cleanup_failure=True)
         main.Prolog = lambda: None
         engine = main.PrologRiskEngine.__new__(main.PrologRiskEngine)
         engine.available = True
@@ -130,12 +136,14 @@ class PrologTests(unittest.TestCase):
 
         d = self._make_detection()
         # Should not raise despite cleanup failure
-        level, action = main.PrologRiskEngine.decide(engine, d)
+        level, action, rule_id, explanation, source = main.PrologRiskEngine.decide(engine, d)
+        # Should not raise despite cleanup failure
         self.assertEqual(level, "WARNING")
+        self.assertEqual(source, "prolog")
 
     def test_concurrent_calls_are_serialized(self):
         # MockProlog will raise if assertz is called concurrently
-        mock = MockProlog({"decision": [{"Level": "warning", "Action": "ok"}]})
+        mock = MockProlog({"decision": [{"Level": "warning", "Action": "ok", "RuleID": "test_rule", "Explanation": "ok"}]})
         main.Prolog = lambda: None
         engine = main.PrologRiskEngine.__new__(main.PrologRiskEngine)
         engine.available = True
@@ -171,8 +179,9 @@ class PrologTests(unittest.TestCase):
         engine._prolog_lock = threading.Lock()
 
         d = self._make_detection()
-        level, action = main.PrologRiskEngine.decide(engine, d)
+        level, action, rule_id, explanation, source = main.PrologRiskEngine.decide(engine, d)
         self.assertIsInstance(level, str)
+        self.assertEqual(source, "python_fallback")
 
 
 if __name__ == "__main__":
