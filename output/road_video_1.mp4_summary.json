@@ -1,24 +1,24 @@
 {
   "video": "road_video_1.mp4.MP4",
   "frames": 363,
-  "total_detections": 1219,
+  "total_detections": 1222,
   "risk_counts": {
-    "SAFE": 1086,
+    "SAFE": 1089,
     "CAUTION": 92,
     "WARNING": 37,
     "CRITICAL": 4
   },
   "object_counts": {
     "person": 297,
-    "car": 699,
+    "car": 702,
     "bus": 166,
     "longitudinal": 1,
     "truck": 56
   },
   "incidents": 6,
   "minimum_ttc_s": 0.624,
-  "processing_seconds": 15.58,
-  "average_processing_fps": 26.12,
+  "processing_seconds": 13.19,
+  "average_processing_fps": 27.69,
   "detection_interval": 1,
   "low_light_frames": 14,
   "night_video": false,
@@ -38,11 +38,11 @@
   "pipeline": {
     "max_read_queue": 2,
     "max_result_queue": 8,
-    "inference_avg_s": 0.0388,
+    "inference_avg_s": 0.0316,
     "dropped_frames": 0
   },
   "triggered_rule_counts": {
-    "object_outside_vehicle_lane": 1052,
+    "object_outside_vehicle_lane": 1055,
     "object_at_safe_distance": 34,
     "caution_object_in_vehicle_lane": 92,
     "vehicle_following_distance": 19,
@@ -51,7 +51,7 @@
     "brake_immediately_person_ahead": 2
   },
   "decision_source_counts": {
-    "prolog": 1219
+    "prolog": 1222
   },
   "triggered_rule_examples": {
     "object_outside_vehicle_lane": "Object is outside the vehicle lane and not an immediate collision threat.",
@@ -63,9 +63,9 @@
     "brake_immediately_person_ahead": "Immediate braking required due to person in lane."
   },
   "rule_conflicts": {
-    "detections_with_conflicts": 1185,
+    "detections_with_conflicts": 1188,
     "overridden_rule_counts": {
-      "object_at_safe_distance": 1185,
+      "object_at_safe_distance": 1188,
       "generic_warning": 23,
       "caution_object_in_vehicle_lane": 41,
       "vehicle_following_distance": 2,

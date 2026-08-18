@@ -12,8 +12,8 @@
   },
   "incidents": 63,
   "minimum_ttc_s": 0.139,
-  "processing_seconds": 19.69,
-  "average_processing_fps": 35.99,
+  "processing_seconds": 33.44,
+  "average_processing_fps": 20.84,
   "detection_interval": 1,
   "low_light_frames": 0,
   "night_video": false,
@@ -31,9 +31,9 @@
     "uncalibrated_defaults": true
   },
   "pipeline": {
-    "max_read_queue": 8,
-    "max_result_queue": 0,
-    "inference_avg_s": 0.0281,
+    "max_read_queue": 2,
+    "max_result_queue": 8,
+    "inference_avg_s": 0.0304,
     "dropped_frames": 0
   },
   "triggered_rule_counts": {
