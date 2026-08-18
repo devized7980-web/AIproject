@@ -56,17 +56,17 @@ DISPLAY_NAMES = {
 # Hand-written presentation metadata for the benchmark clips.
 META = {
     "road_video_1.mp4.MP4": {
-        "title": "Urban Crossing — Heavy Rain",
+        "title": "Urban Traffic and Pedestrian Hazard Detection",
         "location": "City centre, 4-lane arterial",
         "weather": "Heavy rain",
     },
     "road_video_2.mp4.MP4": {
-        "title": "Suburban Route — Dry Daylight",
+        "title": "Multi-Vehicle Collision Risk and Safety Analysis",
         "location": "Two-lane residential",
         "weather": "Clear",
     },
     "road_video_3.mp4.mp4": {
-        "title": "Night Highway — Low Light",
+        "title": "Pothole and Road-Surface Hazard Detection",
         "location": "Dual carriageway",
         "weather": "Night, dry",
     },

@@ -4,7 +4,7 @@
 export const VIDEOS = [
   {
     "id": "video_1",
-    "title": "Urban Crossing — Heavy Rain",
+    "title": "Urban Traffic and Pedestrian Hazard Detection",
     "file": "road_video_1.mp4_processed.mp4",
     "thumb": "road_video_1.mp4_thumb.jpg",
     "location": "City centre, 4-lane arterial",
@@ -197,7 +197,7 @@ export const VIDEOS = [
   },
   {
     "id": "video_2",
-    "title": "Suburban Route — Dry Daylight",
+    "title": "Multi-Vehicle Collision Risk and Safety Analysis",
     "file": "road_video_2.mp4_processed.mp4",
     "thumb": "road_video_2.mp4_thumb.jpg",
     "location": "Two-lane residential",
@@ -470,7 +470,7 @@ export const VIDEOS = [
   },
   {
     "id": "video_3",
-    "title": "Night Highway — Low Light",
+    "title": "Pothole and Road-Surface Hazard Detection",
     "file": "road_video_3.mp4_processed.mp4",
     "thumb": "road_video_3.mp4_thumb.jpg",
     "location": "Dual carriageway",

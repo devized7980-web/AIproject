@@ -43,15 +43,29 @@ python main.py --no-voice      # disable spoken alerts
 
 Results are written to `output/` and incident snapshots to `output/incidents/`.
 
-### Frontend (Safeway AI dashboard)
+### Frontend (Safeway AI dashboard) — live demo
 
-A React/Vite app (`frontend/`) renders the processed clips as a benchmark gallery with risk timelines, event boxes, object stats and emergency/quick-action pages.
+A React/Vite app (`frontend/`) presents the processed clips as a **live command center** with 8 pages: Live Command Center, Incident Replay, Safety Analytics, AI Explainer, What-If Simulator, Alert Center, Model Performance Lab and System Settings.
+
+A FastAPI backend (`backend/`) replays the recorded pipeline output as a live camera feed over WebSockets and serves the REST endpoints (state, alerts, analytics, Prolog traces, simulation, live YOLO benchmark). The frontend falls back to a local mirror of the static data when the backend is offline.
 
 ```bash
+# 1. Start the backend (repo root) — replays output/ at ~5 fps over WebSocket
+pip install fastapi uvicorn websockets pyswip
+python -m uvicorn backend.server:app --port 8000
+
+# 2. Start the frontend dev server (separate terminal)
 cd frontend
 npm install
-npm run dev      # dev server
-npm run build    # production build
+npm run dev      # dev server (proxies /api, /raw, /ws to localhost:8000)
+```
+
+Or run the whole demo from one server after a production build (the backend serves `frontend/dist/`):
+
+```bash
+cd frontend && npm run build && cd ..
+python -m uvicorn backend.server:app --port 8000
+# open http://localhost:8000
 ```
 
 ## Regenerating the gallery data
@@ -68,12 +82,14 @@ python generate_frontend_data.py
 main.py                     detection pipeline + CLI
 expert_system.pl            Prolog risk rules
 download_yolo.py            downloads the common YOLO11 model
-generate_frontend_data.py   rebuilds frontend gallery data from output/
+generate_frontend_data.py   rebuilds frontend data from output/ (static fallback)
 yolo11n.pt                  common COCO model
 best.pt                     custom road-damage model
-frontend/                   React/Vite dashboard (Safeway AI)
+backend/                    FastAPI live backend (server, data, Prolog engine, feed, benchmark)
+frontend/                   React/Vite dashboard (Safeway AI, 9 pages)
   src/data.js               editable constants (emergency numbers, levels)
-  src/videos.generated.js   auto-generated gallery data (do not edit)
+  src/videos.generated.js   auto-generated static fallback data (do not edit)
+  src/pages/                the 9 dashboard pages
   public/videos/            processed clips + thumbnails
 output/                     annotated videos, CSV, JSON, HTML, incidents
 ```
