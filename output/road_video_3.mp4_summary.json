@@ -1,0 +1,643 @@
+{
+  "video": "road_video_3.mp4.mp4",
+  "frames": 692,
+  "total_detections": 380,
+  "risk_counts": {
+    "SAFE": 237,
+    "WARNING": 18,
+    "CRITICAL": 125
+  },
+  "object_counts": {
+    "pothole": 380
+  },
+  "incidents": 63,
+  "minimum_ttc_s": 0.139,
+  "processing_seconds": 33.44,
+  "average_processing_fps": 20.84,
+  "detection_interval": 1,
+  "low_light_frames": 0,
+  "night_video": false,
+  "limitations": "Distance and TTC are monocular estimates and require camera calibration.",
+  "distance_methods_used": [
+    "width_fallback"
+  ],
+  "calibration": {
+    "horizon_y": 324,
+    "camera_height_m": null,
+    "vertical_fov_deg": null,
+    "reference_points": null,
+    "min_distance": 0.5,
+    "max_distance": 999.0,
+    "uncalibrated_defaults": true
+  },
+  "pipeline": {
+    "max_read_queue": 2,
+    "max_result_queue": 8,
+    "inference_avg_s": 0.0304,
+    "dropped_frames": 0
+  },
+  "triggered_rule_counts": {
+    "object_outside_vehicle_lane": 237,
+    "road_damage_warning": 18,
+    "brake_and_avoid_road_damage": 125
+  },
+  "decision_source_counts": {
+    "prolog": 380
+  },
+  "triggered_rule_examples": {
+    "object_outside_vehicle_lane": "Object is outside the vehicle lane and not an immediate collision threat.",
+    "road_damage_warning": "Road damage ahead; slow down and prepare to avoid.",
+    "brake_and_avoid_road_damage": "Immediate maneuver to avoid road damage is required."
+  },
+  "rule_conflicts": {
+    "detections_with_conflicts": 380,
+    "overridden_rule_counts": {
+      "object_at_safe_distance": 380,
+      "generic_warning": 143,
+      "caution_object_in_vehicle_lane": 143,
+      "brake_now_object_too_close": 125,
+      "road_damage_warning": 125
+    },
+    "rule_priorities": {
+      "brake_immediately_person_ahead": 100,
+      "brake_and_avoid_road_damage": 95,
+      "brake_and_avoid_obstacle": 94,
+      "brake_now_object_too_close": 90,
+      "animal_warning": 65,
+      "road_damage_warning": 62,
+      "obstacle_warning": 61,
+      "vehicle_following_distance": 60,
+      "generic_warning": 55,
+      "observe_traffic_control": 45,
+      "caution_object_in_vehicle_lane": 40,
+      "object_outside_vehicle_lane": 25,
+      "object_at_safe_distance": 20
+    },
+    "examples": [
+      {
+        "object": "pothole",
+        "frame": 32,
+        "winner": {
+          "rule_id": "brake_and_avoid_road_damage",
+          "risk": "CRITICAL",
+          "priority": 95,
+          "explanation": "Immediate maneuver to avoid road damage is required."
+        },
+        "overridden": [
+          {
+            "rule_id": "brake_now_object_too_close",
+            "risk": "CRITICAL",
+            "priority": 90,
+            "explanation": "Object detected very close; immediate braking advised.",
+            "winner": false
+          },
+          {
+            "rule_id": "road_damage_warning",
+            "risk": "WARNING",
+            "priority": 62,
+            "explanation": "Road damage ahead; slow down and prepare to avoid.",
+            "winner": false
+          },
+          {
+            "rule_id": "generic_warning",
+            "risk": "WARNING",
+            "priority": 55,
+            "explanation": "Slow down: hazard detected ahead in vehicle lane.",
+            "winner": false
+          },
+          {
+            "rule_id": "caution_object_in_vehicle_lane",
+            "risk": "CAUTION",
+            "priority": 40,
+            "explanation": "Object detected in vehicle lane; exercise caution.",
+            "winner": false
+          },
+          {
+            "rule_id": "object_at_safe_distance",
+            "risk": "SAFE",
+            "priority": 20,
+            "explanation": "Object is at a safe distance.",
+            "winner": false
+          }
+        ]
+      },
+      {
+        "object": "pothole",
+        "frame": 33,
+        "winner": {
+          "rule_id": "brake_and_avoid_road_damage",
+          "risk": "CRITICAL",
+          "priority": 95,
+          "explanation": "Immediate maneuver to avoid road damage is required."
+        },
+        "overridden": [
+          {
+            "rule_id": "brake_now_object_too_close",
+            "risk": "CRITICAL",
+            "priority": 90,
+            "explanation": "Object detected very close; immediate braking advised.",
+            "winner": false
+          },
+          {
+            "rule_id": "road_damage_warning",
+            "risk": "WARNING",
+            "priority": 62,
+            "explanation": "Road damage ahead; slow down and prepare to avoid.",
+            "winner": false
+          },
+          {
+            "rule_id": "generic_warning",
+            "risk": "WARNING",
+            "priority": 55,
+            "explanation": "Slow down: hazard detected ahead in vehicle lane.",
+            "winner": false
+          },
+          {
+            "rule_id": "caution_object_in_vehicle_lane",
+            "risk": "CAUTION",
+            "priority": 40,
+            "explanation": "Object detected in vehicle lane; exercise caution.",
+            "winner": false
+          },
+          {
+            "rule_id": "object_at_safe_distance",
+            "risk": "SAFE",
+            "priority": 20,
+            "explanation": "Object is at a safe distance.",
+            "winner": false
+          }
+        ]
+      },
+      {
+        "object": "pothole",
+        "frame": 73,
+        "winner": {
+          "rule_id": "brake_and_avoid_road_damage",
+          "risk": "CRITICAL",
+          "priority": 95,
+          "explanation": "Immediate maneuver to avoid road damage is required."
+        },
+        "overridden": [
+          {
+            "rule_id": "brake_now_object_too_close",
+            "risk": "CRITICAL",
+            "priority": 90,
+            "explanation": "Object detected very close; immediate braking advised.",
+            "winner": false
+          },
+          {
+            "rule_id": "road_damage_warning",
+            "risk": "WARNING",
+            "priority": 62,
+            "explanation": "Road damage ahead; slow down and prepare to avoid.",
+            "winner": false
+          },
+          {
+            "rule_id": "generic_warning",
+            "risk": "WARNING",
+            "priority": 55,
+            "explanation": "Slow down: hazard detected ahead in vehicle lane.",
+            "winner": false
+          },
+          {
+            "rule_id": "caution_object_in_vehicle_lane",
+            "risk": "CAUTION",
+            "priority": 40,
+            "explanation": "Object detected in vehicle lane; exercise caution.",
+            "winner": false
+          },
+          {
+            "rule_id": "object_at_safe_distance",
+            "risk": "SAFE",
+            "priority": 20,
+            "explanation": "Object is at a safe distance.",
+            "winner": false
+          }
+        ]
+      },
+      {
+        "object": "pothole",
+        "frame": 75,
+        "winner": {
+          "rule_id": "brake_and_avoid_road_damage",
+          "risk": "CRITICAL",
+          "priority": 95,
+          "explanation": "Immediate maneuver to avoid road damage is required."
+        },
+        "overridden": [
+          {
+            "rule_id": "brake_now_object_too_close",
+            "risk": "CRITICAL",
+            "priority": 90,
+            "explanation": "Object detected very close; immediate braking advised.",
+            "winner": false
+          },
+          {
+            "rule_id": "road_damage_warning",
+            "risk": "WARNING",
+            "priority": 62,
+            "explanation": "Road damage ahead; slow down and prepare to avoid.",
+            "winner": false
+          },
+          {
+            "rule_id": "generic_warning",
+            "risk": "WARNING",
+            "priority": 55,
+            "explanation": "Slow down: hazard detected ahead in vehicle lane.",
+            "winner": false
+          },
+          {
+            "rule_id": "caution_object_in_vehicle_lane",
+            "risk": "CAUTION",
+            "priority": 40,
+            "explanation": "Object detected in vehicle lane; exercise caution.",
+            "winner": false
+          },
+          {
+            "rule_id": "object_at_safe_distance",
+            "risk": "SAFE",
+            "priority": 20,
+            "explanation": "Object is at a safe distance.",
+            "winner": false
+          }
+        ]
+      },
+      {
+        "object": "pothole",
+        "frame": 76,
+        "winner": {
+          "rule_id": "brake_and_avoid_road_damage",
+          "risk": "CRITICAL",
+          "priority": 95,
+          "explanation": "Immediate maneuver to avoid road damage is required."
+        },
+        "overridden": [
+          {
+            "rule_id": "brake_now_object_too_close",
+            "risk": "CRITICAL",
+            "priority": 90,
+            "explanation": "Object detected very close; immediate braking advised.",
+            "winner": false
+          },
+          {
+            "rule_id": "road_damage_warning",
+            "risk": "WARNING",
+            "priority": 62,
+            "explanation": "Road damage ahead; slow down and prepare to avoid.",
+            "winner": false
+          },
+          {
+            "rule_id": "generic_warning",
+            "risk": "WARNING",
+            "priority": 55,
+            "explanation": "Slow down: hazard detected ahead in vehicle lane.",
+            "winner": false
+          },
+          {
+            "rule_id": "caution_object_in_vehicle_lane",
+            "risk": "CAUTION",
+            "priority": 40,
+            "explanation": "Object detected in vehicle lane; exercise caution.",
+            "winner": false
+          },
+          {
+            "rule_id": "object_at_safe_distance",
+            "risk": "SAFE",
+            "priority": 20,
+            "explanation": "Object is at a safe distance.",
+            "winner": false
+          }
+        ]
+      },
+      {
+        "object": "pothole",
+        "frame": 77,
+        "winner": {
+          "rule_id": "brake_and_avoid_road_damage",
+          "risk": "CRITICAL",
+          "priority": 95,
+          "explanation": "Immediate maneuver to avoid road damage is required."
+        },
+        "overridden": [
+          {
+            "rule_id": "brake_now_object_too_close",
+            "risk": "CRITICAL",
+            "priority": 90,
+            "explanation": "Object detected very close; immediate braking advised.",
+            "winner": false
+          },
+          {
+            "rule_id": "road_damage_warning",
+            "risk": "WARNING",
+            "priority": 62,
+            "explanation": "Road damage ahead; slow down and prepare to avoid.",
+            "winner": false
+          },
+          {
+            "rule_id": "generic_warning",
+            "risk": "WARNING",
+            "priority": 55,
+            "explanation": "Slow down: hazard detected ahead in vehicle lane.",
+            "winner": false
+          },
+          {
+            "rule_id": "caution_object_in_vehicle_lane",
+            "risk": "CAUTION",
+            "priority": 40,
+            "explanation": "Object detected in vehicle lane; exercise caution.",
+            "winner": false
+          },
+          {
+            "rule_id": "object_at_safe_distance",
+            "risk": "SAFE",
+            "priority": 20,
+            "explanation": "Object is at a safe distance.",
+            "winner": false
+          }
+        ]
+      },
+      {
+        "object": "pothole",
+        "frame": 78,
+        "winner": {
+          "rule_id": "brake_and_avoid_road_damage",
+          "risk": "CRITICAL",
+          "priority": 95,
+          "explanation": "Immediate maneuver to avoid road damage is required."
+        },
+        "overridden": [
+          {
+            "rule_id": "brake_now_object_too_close",
+            "risk": "CRITICAL",
+            "priority": 90,
+            "explanation": "Object detected very close; immediate braking advised.",
+            "winner": false
+          },
+          {
+            "rule_id": "road_damage_warning",
+            "risk": "WARNING",
+            "priority": 62,
+            "explanation": "Road damage ahead; slow down and prepare to avoid.",
+            "winner": false
+          },
+          {
+            "rule_id": "generic_warning",
+            "risk": "WARNING",
+            "priority": 55,
+            "explanation": "Slow down: hazard detected ahead in vehicle lane.",
+            "winner": false
+          },
+          {
+            "rule_id": "caution_object_in_vehicle_lane",
+            "risk": "CAUTION",
+            "priority": 40,
+            "explanation": "Object detected in vehicle lane; exercise caution.",
+            "winner": false
+          },
+          {
+            "rule_id": "object_at_safe_distance",
+            "risk": "SAFE",
+            "priority": 20,
+            "explanation": "Object is at a safe distance.",
+            "winner": false
+          }
+        ]
+      },
+      {
+        "object": "pothole",
+        "frame": 79,
+        "winner": {
+          "rule_id": "brake_and_avoid_road_damage",
+          "risk": "CRITICAL",
+          "priority": 95,
+          "explanation": "Immediate maneuver to avoid road damage is required."
+        },
+        "overridden": [
+          {
+            "rule_id": "brake_now_object_too_close",
+            "risk": "CRITICAL",
+            "priority": 90,
+            "explanation": "Object detected very close; immediate braking advised.",
+            "winner": false
+          },
+          {
+            "rule_id": "road_damage_warning",
+            "risk": "WARNING",
+            "priority": 62,
+            "explanation": "Road damage ahead; slow down and prepare to avoid.",
+            "winner": false
+          },
+          {
+            "rule_id": "generic_warning",
+            "risk": "WARNING",
+            "priority": 55,
+            "explanation": "Slow down: hazard detected ahead in vehicle lane.",
+            "winner": false
+          },
+          {
+            "rule_id": "caution_object_in_vehicle_lane",
+            "risk": "CAUTION",
+            "priority": 40,
+            "explanation": "Object detected in vehicle lane; exercise caution.",
+            "winner": false
+          },
+          {
+            "rule_id": "object_at_safe_distance",
+            "risk": "SAFE",
+            "priority": 20,
+            "explanation": "Object is at a safe distance.",
+            "winner": false
+          }
+        ]
+      },
+      {
+        "object": "pothole",
+        "frame": 80,
+        "winner": {
+          "rule_id": "brake_and_avoid_road_damage",
+          "risk": "CRITICAL",
+          "priority": 95,
+          "explanation": "Immediate maneuver to avoid road damage is required."
+        },
+        "overridden": [
+          {
+            "rule_id": "brake_now_object_too_close",
+            "risk": "CRITICAL",
+            "priority": 90,
+            "explanation": "Object detected very close; immediate braking advised.",
+            "winner": false
+          },
+          {
+            "rule_id": "road_damage_warning",
+            "risk": "WARNING",
+            "priority": 62,
+            "explanation": "Road damage ahead; slow down and prepare to avoid.",
+            "winner": false
+          },
+          {
+            "rule_id": "generic_warning",
+            "risk": "WARNING",
+            "priority": 55,
+            "explanation": "Slow down: hazard detected ahead in vehicle lane.",
+            "winner": false
+          },
+          {
+            "rule_id": "caution_object_in_vehicle_lane",
+            "risk": "CAUTION",
+            "priority": 40,
+            "explanation": "Object detected in vehicle lane; exercise caution.",
+            "winner": false
+          },
+          {
+            "rule_id": "object_at_safe_distance",
+            "risk": "SAFE",
+            "priority": 20,
+            "explanation": "Object is at a safe distance.",
+            "winner": false
+          }
+        ]
+      },
+      {
+        "object": "pothole",
+        "frame": 81,
+        "winner": {
+          "rule_id": "brake_and_avoid_road_damage",
+          "risk": "CRITICAL",
+          "priority": 95,
+          "explanation": "Immediate maneuver to avoid road damage is required."
+        },
+        "overridden": [
+          {
+            "rule_id": "brake_now_object_too_close",
+            "risk": "CRITICAL",
+            "priority": 90,
+            "explanation": "Object detected very close; immediate braking advised.",
+            "winner": false
+          },
+          {
+            "rule_id": "road_damage_warning",
+            "risk": "WARNING",
+            "priority": 62,
+            "explanation": "Road damage ahead; slow down and prepare to avoid.",
+            "winner": false
+          },
+          {
+            "rule_id": "generic_warning",
+            "risk": "WARNING",
+            "priority": 55,
+            "explanation": "Slow down: hazard detected ahead in vehicle lane.",
+            "winner": false
+          },
+          {
+            "rule_id": "caution_object_in_vehicle_lane",
+            "risk": "CAUTION",
+            "priority": 40,
+            "explanation": "Object detected in vehicle lane; exercise caution.",
+            "winner": false
+          },
+          {
+            "rule_id": "object_at_safe_distance",
+            "risk": "SAFE",
+            "priority": 20,
+            "explanation": "Object is at a safe distance.",
+            "winner": false
+          }
+        ]
+      },
+      {
+        "object": "pothole",
+        "frame": 82,
+        "winner": {
+          "rule_id": "brake_and_avoid_road_damage",
+          "risk": "CRITICAL",
+          "priority": 95,
+          "explanation": "Immediate maneuver to avoid road damage is required."
+        },
+        "overridden": [
+          {
+            "rule_id": "brake_now_object_too_close",
+            "risk": "CRITICAL",
+            "priority": 90,
+            "explanation": "Object detected very close; immediate braking advised.",
+            "winner": false
+          },
+          {
+            "rule_id": "road_damage_warning",
+            "risk": "WARNING",
+            "priority": 62,
+            "explanation": "Road damage ahead; slow down and prepare to avoid.",
+            "winner": false
+          },
+          {
+            "rule_id": "generic_warning",
+            "risk": "WARNING",
+            "priority": 55,
+            "explanation": "Slow down: hazard detected ahead in vehicle lane.",
+            "winner": false
+          },
+          {
+            "rule_id": "caution_object_in_vehicle_lane",
+            "risk": "CAUTION",
+            "priority": 40,
+            "explanation": "Object detected in vehicle lane; exercise caution.",
+            "winner": false
+          },
+          {
+            "rule_id": "object_at_safe_distance",
+            "risk": "SAFE",
+            "priority": 20,
+            "explanation": "Object is at a safe distance.",
+            "winner": false
+          }
+        ]
+      },
+      {
+        "object": "pothole",
+        "frame": 83,
+        "winner": {
+          "rule_id": "brake_and_avoid_road_damage",
+          "risk": "CRITICAL",
+          "priority": 95,
+          "explanation": "Immediate maneuver to avoid road damage is required."
+        },
+        "overridden": [
+          {
+            "rule_id": "brake_now_object_too_close",
+            "risk": "CRITICAL",
+            "priority": 90,
+            "explanation": "Object detected very close; immediate braking advised.",
+            "winner": false
+          },
+          {
+            "rule_id": "road_damage_warning",
+            "risk": "WARNING",
+            "priority": 62,
+            "explanation": "Road damage ahead; slow down and prepare to avoid.",
+            "winner": false
+          },
+          {
+            "rule_id": "generic_warning",
+            "risk": "WARNING",
+            "priority": 55,
+            "explanation": "Slow down: hazard detected ahead in vehicle lane.",
+            "winner": false
+          },
+          {
+            "rule_id": "caution_object_in_vehicle_lane",
+            "risk": "CAUTION",
+            "priority": 40,
+            "explanation": "Object detected in vehicle lane; exercise caution.",
+            "winner": false
+          },
+          {
+            "rule_id": "object_at_safe_distance",
+            "risk": "SAFE",
+            "priority": 20,
+            "explanation": "Object is at a safe distance.",
+            "winner": false
+          }
+        ]
+      }
+    ]
+  }
+}
