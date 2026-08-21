@@ -56,6 +56,14 @@ MAX_PROCESSING_WIDTH = 1920
 # at imgsz=416 versus 190 at 640 and only 38 at 960, and 416 is also the
 # fastest (5.3 ms vs 5.7 ms). Larger is emphatically not better for this model.
 ROAD_DAMAGE_IMAGE_SIZE = 416
+
+# Visualization reference resolution.  All overlay sizes (fonts, thickness,
+# padding, panel height) are designed for 1280x720 and scaled proportionally
+# when the actual output frame differs.
+VIS_REF_W = 1280
+VIS_REF_H = 720
+VIS_SCALE_MIN = 0.45
+VIS_SCALE_MAX = 1.8
 TRACKER = "bytetrack.yaml"
 
 # Inference device. Resolved once at startup by select_device(); YOLO inference
@@ -73,14 +81,22 @@ DISTANCE_SMOOTH_ALPHA = 0.35
 # Road damage closes on the camera quickly and is detected sporadically, so its
 # distance follows the measurement more closely than a tracked vehicle's.
 ROAD_DAMAGE_DISTANCE_ALPHA = 0.75
-LANE_SMOOTH_ALPHA = 0.25
+LANE_SMOOTH_ALPHA = 0.20
 # Lane temporal-tracking gates (see LaneTracker).
 LIVE_READER_QUEUE_SIZE = 2          # shallow queue for the live preview path
 MAX_LANE_MISSED_FRAMES = 3          # coast this long through detection gaps
-LANE_MAX_CENTRE_SHIFT_RATIO = 0.10  # max lane-centre move per frame, as a fraction of width
+LANE_MAX_CENTRE_SHIFT_RATIO = 0.08  # max lane-centre move per frame, as a fraction of width
 LANE_MAX_WIDTH_RATIO = 1.5          # max lane-width change factor per frame
-LANE_MIN_DRAW_CONFIDENCE = 0.67     # needs 2 consecutive good detections before drawing,
+LANE_MIN_DRAW_CONFIDENCE = 0.70     # needs 2+ consecutive good detections before drawing,
                                     # so one isolated hit cannot flash the overlay on
+
+# Ego-vehicle filter.  The camera car's hood/bumper appears as a large
+# vehicle detection at the bottom-centre of the frame.  We suppress it
+# when it overlaps a small centred ROI at the bottom, using normalised
+# coordinates so the filter works at any resolution.
+EGO_MIN_BOX_WIDTH_RATIO = 0.22      # box must span ≥ 22 % of frame width
+EGO_TOP_MIN_RATIO = 0.72            # box top must be below 72 % of frame height
+EGO_OVERLAP_MIN_RATIO = 0.40        # ≥ 40 % of box area must fall in the ego ROI
 
 # Forget a track after it has not been seen for this many detection cycles.
 TRACK_FORGET_AFTER = 20
@@ -1100,7 +1116,26 @@ class LaneTracker:
             return False
         if old_w > 1 and not (1 / LANE_MAX_WIDTH_RATIO <= new_w / old_w <= LANE_MAX_WIDTH_RATIO):
             return False
+        # per-vertex: reject if any vertex jumped more than 8 % of frame width
+        max_vtx = 0.08 * self.width
+        diffs = np.abs(candidate.astype(np.float32) - self.polygon.astype(np.float32))
+        if np.any(diffs[:, 0] > max_vtx):
+            return False
         return True
+
+    def _clamp_vertices(self, candidate: np.ndarray) -> np.ndarray:
+        """Soft-clamp each vertex toward the previous polygon so that small
+        residual jitter is absorbed without rejecting the entire frame."""
+        if self.polygon is None:
+            return candidate
+        max_vtx = 0.08 * self.width
+        diff = candidate.astype(np.float32) - self.polygon.astype(np.float32)
+        clamped = np.where(
+            np.abs(diff) > max_vtx,
+            self.polygon.astype(np.float32) + np.sign(diff) * max_vtx,
+            candidate.astype(np.float32),
+        )
+        return np.rint(clamped).astype(np.int32)
 
     def update(self, raw_polygon: np.ndarray, detected: bool,
                frame_no: int) -> tuple[np.ndarray, bool, float]:
@@ -1187,6 +1222,43 @@ def deduplicate(items: list[Detection]) -> list[Detection]:
             continue
         kept.append(d)
     return kept
+
+
+def is_ego_vehicle(d: Detection, frame_h: int, frame_w: int) -> bool:
+    """Return True if *d* is almost certainly the camera car's own hood/bumper.
+
+    The ego vehicle appears as a large vehicle box anchored at the
+    bottom-centre of the frame.  We use three normalised criteria:
+
+    1. Box width ≥ ``EGO_MIN_BOX_WIDTH_RATIO`` of the frame width.
+    2. Box top edge below ``EGO_TOP_MIN_RATIO`` of the frame height.
+    3. ≥ ``EGO_OVERLAP_MIN_RATIO`` of the box area overlaps a narrow
+       centred strip in the bottom 30 % of the frame (the ego ROI).
+
+    No single criterion is sufficient; together they leave real nearby
+    vehicles (offset horizontally or not anchored to the bottom) alone.
+    """
+    x1, y1, x2, y2 = d.box
+    bw = x2 - x1
+    bh = y2 - y1
+    if bw < EGO_MIN_BOX_WIDTH_RATIO * frame_w:
+        return False
+    if y1 < EGO_TOP_MIN_RATIO * frame_h:
+        return False
+    # Ego ROI: centred horizontal strip in the bottom 30 % of the frame
+    roi_x1 = int(0.30 * frame_w)
+    roi_x2 = int(0.70 * frame_w)
+    roi_y1 = int(0.70 * frame_h)
+    roi_y2 = frame_h
+    ox1 = max(x1, roi_x1)
+    oy1 = max(y1, roi_y1)
+    ox2 = min(x2, roi_x2)
+    oy2 = min(y2, roi_y2)
+    if ox1 >= ox2 or oy1 >= oy2:
+        return False
+    overlap_area = (ox2 - ox1) * (oy2 - oy1)
+    box_area = max(1, bw * bh)
+    return overlap_area / box_area >= EGO_OVERLAP_MIN_RATIO
 
 
 def select_device(requested: str | None = None) -> str:
@@ -1334,6 +1406,18 @@ def update_ttc(d: Detection, history: dict[str, deque[tuple[float, float]]], vid
         d.ttc_s = d.distance_m / closing
 
 
+def vis_scale(frame_w: int, frame_h: int) -> float:
+    """Visualization scale factor relative to 1280x720 reference resolution.
+
+    All overlay sizes are multiplied by this value so text, boxes, and panels
+    remain proportional regardless of the actual frame dimensions.  The result
+    is clamped to [VIS_SCALE_MIN, VIS_SCALE_MAX] to prevent excessively large
+    or microscopic overlays on extreme resolutions.
+    """
+    return max(VIS_SCALE_MIN, min(VIS_SCALE_MAX,
+              min(frame_w / VIS_REF_W, frame_h / VIS_REF_H)))
+
+
 def draw_lane(frame: np.ndarray, polygon: np.ndarray, detected: bool) -> None:
     """Draw the lane corridor only while the estimate is trustworthy.
 
@@ -1343,19 +1427,25 @@ def draw_lane(frame: np.ndarray, polygon: np.ndarray, detected: bool) -> None:
     """
     if not detected:
         return
+    vs = vis_scale(frame.shape[1], frame.shape[0])
     overlay = frame.copy()
     color = (255, 220, 0)
     cv2.fillPoly(overlay, [polygon], color)
     cv2.addWeighted(overlay, 0.14, frame, 0.86, 0, frame)
-    cv2.polylines(frame, [polygon], True, color, 2)
+    cv2.polylines(frame, [polygon], True, color, max(1, int(2 * vs)))
     cv2.putText(frame, "LANE DETECTED", tuple(polygon[0]),
-                cv2.FONT_HERSHEY_SIMPLEX, 0.48, color, 2, cv2.LINE_AA)
+                cv2.FONT_HERSHEY_SIMPLEX, 0.48 * vs, color, max(1, int(2 * vs)), cv2.LINE_AA)
 
 
-def panel_height(frame_height: int) -> int:
-    """Height of the status panel. draw_panel lays out 5 rows down to y=132,
-    so the backing plate must be tall enough to contain them."""
-    return min(142, max(40, frame_height // 2))
+def panel_height(frame_height: int, frame_width: int = 0) -> int:
+    """Height of the status panel, scaled to frame dimensions.
+
+    Designed for 142 px at 720p.  The panel never exceeds half the frame.
+    """
+    if frame_width <= 0:
+        frame_width = int(frame_height * 16 / 9)
+    vs = vis_scale(frame_width, frame_height)
+    return int(max(40, min(int(142 * vs), frame_height // 2)))
 
 
 def _rects_overlap(a: tuple[int, int, int, int], b: tuple[int, int, int, int]) -> bool:
@@ -1372,68 +1462,103 @@ def draw_detection(frame: np.ndarray, d: Detection,
         return
     if not (0 <= d.x1 < d.x2 <= w - 1 and 0 <= d.y1 < d.y2 <= h - 1):
         return
+    vs = vis_scale(w, h)
     color = LEVEL_COLORS[d.risk]
-    cv2.rectangle(frame, (d.x1, d.y1), (d.x2, d.y2), color, 3 if d.in_lane else 2)
+    box_thickness = max(1, int((2 if d.in_lane else 1) * vs))
+    cv2.rectangle(frame, (d.x1, d.y1), (d.x2, d.y2), color, box_thickness)
     ttc = "--" if not math.isfinite(d.ttc_s) else f"{d.ttc_s:.1f}s"
     label = f"{d.name} {d.confidence:.2f} | {d.distance_m:.1f}m | TTC:{ttc} | {d.risk}"
 
-    font, scale, thickness = cv2.FONT_HERSHEY_SIMPLEX, 0.48, 1
-    (tw, th), _ = cv2.getTextSize(label, font, scale, thickness)
-    lx = max(0, min(d.x1, w - tw - 6))
+    font_scale = 0.58 * vs
+    label_thickness = max(1, int(vs))
+    font = cv2.FONT_HERSHEY_SIMPLEX
+    (tw, th), _ = cv2.getTextSize(label, font, font_scale, label_thickness)
+    pad_x = int(7 * vs)
+    pad_y = int(7 * vs)
+    lx = max(0, min(d.x1, w - tw - pad_x))
 
     # The side is fixed for the track's lifetime (chosen in DetectionSmoother),
     # so the label can never flip between above and below the box. Only its
     # coordinates track the box. Anything that would push it off-screen or under
     # the status panel is CLAMPED -- never resolved by switching sides.
     if d.label_side == "bottom":
-        ly = d.y2 + th + 6
+        ly = d.y2 + th + pad_y
     else:
-        ly = d.y1 - 6
-    ly = max(top_margin + th + 6, min(ly, h - 5))
+        ly = d.y1 - pad_y
+    ly = max(top_margin + th + pad_y, min(ly, h - 5))
 
-    # Resolve overlaps by stacking in the label's OWN fixed direction (top
-    # labels move further up, bottom labels further down). The side chosen at
-    # track creation is never changed, so a label cannot flip between frames --
-    # it only stacks clear of its neighbours.
+    # Minimal collision avoidance: try at most 1 small local offset to reduce
+    # overlap, but never push a label far from its own bounding box.  Labels
+    # that still overlap after one step are left in place so they remain
+    # visually attached to their detection.
     if placed_labels is not None:
-        step = (th + 8) if d.label_side == "bottom" else -(th + 8)
-        rect = (lx, ly - th - 4, lx + tw + 6, ly + 4)
-        for _ in range(6):
+        step = int((th + int(4 * vs)) * (1 if d.label_side == "bottom" else -1))
+        rect = (lx, ly - th - int(2 * vs), lx + tw + pad_x, ly + int(2 * vs))
+        for _ in range(1):
             if not any(_rects_overlap(rect, other) for other in placed_labels):
                 break
             ly += step
-            rect = (lx, ly - th - 4, lx + tw + 6, ly + 4)
-        ly = max(top_margin + th + 6, min(ly, h - 5))
-        rect = (lx, ly - th - 4, lx + tw + 6, ly + 4)
+            rect = (lx, ly - th - int(2 * vs), lx + tw + pad_x, ly + int(2 * vs))
+        ly = max(top_margin + th + pad_y, min(ly, h - 5))
+        rect = (lx, ly - th - int(2 * vs), lx + tw + pad_x, ly + int(2 * vs))
         placed_labels.append(rect)
 
     # dark plate behind the text so it stays readable over bright road surface
-    cv2.rectangle(frame, (lx, ly - th - 4), (lx + tw + 6, ly + 4), (0, 0, 0), -1)
-    cv2.putText(frame, label, (lx + 3, ly), font, scale, color, thickness, cv2.LINE_AA)
+    cv2.rectangle(frame, (lx, ly - th - int(2 * vs)), (lx + tw + pad_x, ly + int(2 * vs)), (0, 0, 0), -1)
+    cv2.putText(frame, label, (lx + int(3 * vs), ly), font, font_scale, color, label_thickness, cv2.LINE_AA)
 
 
 def draw_panel(frame: np.ndarray, level: str, action: str, count: int, fps: float, ttc: float, rule_id: str = "", explanation: str = "") -> None:
     h, w = frame.shape[:2]
-    ph = panel_height(h)
+    vs = vis_scale(w, h)
+    ph = panel_height(h, w)
     overlay = frame.copy()
     cv2.rectangle(overlay, (0, 0), (w, ph), (0, 0, 0), -1)
     cv2.addWeighted(overlay, 0.78, frame, 0.22, 0, frame)
-    cv2.putText(frame, f"STATUS: {level}", (18, 34), cv2.FONT_HERSHEY_SIMPLEX, 0.88,
-                LEVEL_COLORS[level], 2, cv2.LINE_AA)
-    cv2.putText(frame, f"ACTION: {action[:90]}", (18, 64), cv2.FONT_HERSHEY_SIMPLEX, 0.56,
-                (255, 255, 255), 2, cv2.LINE_AA)
-    # One line per row. These used to sit at y=96/106/116 and overprint each
-    # other; each row now gets its own baseline.
-    if rule_id and ph >= 92:
-        cv2.putText(frame, f"Rule: {rule_id}"[:90], (18, 88), cv2.FONT_HERSHEY_SIMPLEX, 0.45,
-                    (200, 200, 200), 1, cv2.LINE_AA)
-    if explanation and ph >= 112:
-        cv2.putText(frame, f"{explanation[:76]}", (18, 108), cv2.FONT_HERSHEY_SIMPLEX, 0.42,
-                    (200, 200, 200), 1, cv2.LINE_AA)
+    x0 = int(18 * vs)
+    font = cv2.FONT_HERSHEY_SIMPLEX
+    cv2.putText(frame, f"STATUS: {level}", (x0, int(34 * vs)), font, 0.88 * vs,
+                LEVEL_COLORS[level], max(1, int(2 * vs)), cv2.LINE_AA)
+    cv2.putText(frame, f"ACTION: {action[:90]}", (x0, int(64 * vs)), font, 0.56 * vs,
+                (255, 255, 255), max(1, int(2 * vs)), cv2.LINE_AA)
+    # One line per row. Each row gets its own baseline, scaled to frame size.
+    if rule_id and ph >= int(92 * vs):
+        cv2.putText(frame, f"Rule: {rule_id}"[:90], (x0, int(88 * vs)), font, 0.45 * vs,
+                    (200, 200, 200), max(1, int(vs)), cv2.LINE_AA)
+    if explanation and ph >= int(112 * vs):
+        cv2.putText(frame, f"{explanation[:76]}", (x0, int(108 * vs)), font, 0.42 * vs,
+                    (200, 200, 200), max(1, int(vs)), cv2.LINE_AA)
     ttc_text = "--" if not math.isfinite(ttc) else f"{ttc:.1f} sec"
-    if ph >= 136:
+    if ph >= int(136 * vs):
         cv2.putText(frame, f"Objects: {count} | FPS: {fps:.1f} | Minimum TTC: {ttc_text}",
-                    (18, 132), cv2.FONT_HERSHEY_SIMPLEX, 0.52, (255, 255, 255), 2, cv2.LINE_AA)
+                    (x0, int(132 * vs)), font, 0.52 * vs, (255, 255, 255), max(1, int(2 * vs)), cv2.LINE_AA)
+
+
+def _scale_detection(d: Detection, sx: float, sy: float) -> Detection:
+    """Return a shallow copy of a detection with box coordinates scaled by sx/sy.
+
+    Used to map detection coordinates from processing resolution to source
+    resolution when writing the output video at original frame dimensions.
+    Only the geometric fields are transformed; risk/classification/track fields
+    are passed through unchanged.
+    """
+    if sx == 1.0 and sy == 1.0:
+        return d
+    def _s(v: tuple[int, int, int, int]) -> tuple[int, int, int, int]:
+        return (int(v[0] * sx), int(v[1] * sy), int(v[2] * sx), int(v[3] * sy))
+    return Detection(
+        name=d.name, confidence=d.confidence,
+        box=_s(d.box), source=d.source, track_key=d.track_key,
+        distance_m=d.distance_m, in_lane=d.in_lane,
+        lane_overlap=d.lane_overlap, box_height_ratio=d.box_height_ratio,
+        closing_speed_mps=d.closing_speed_mps, ttc_s=d.ttc_s,
+        risk=d.risk, action=d.action, distance_method=d.distance_method,
+        measured_box=_s(d.measured_box),
+        rule_id=d.rule_id, explanation=d.explanation,
+        decision_source=d.decision_source, rule_priority=d.rule_priority,
+        decision_trace=d.decision_trace, tracking_source=d.tracking_source,
+        label_side=d.label_side,
+    )
 
 
 def incident_folder_for(video_name: str) -> Path:
@@ -1616,6 +1741,12 @@ def process_video(path: Path, common: YOLO, custom: YOLO, expert: PrologRiskEngi
     if needs_resize:
         print(f"Downscaling {source_w}x{source_h} -> {w}x{h} for processing")
 
+    vs = vis_scale(w, h)
+    print(f"  Input resolution:       {source_w}x{source_h}")
+    print(f"  Processing resolution:  {w}x{h}")
+    print(f"  Output-video resolution:{source_w}x{source_h}")
+    print(f"  Visualization scale:    {vs:.2f}")
+
     video_out = OUTPUT_FOLDER / f"{path.stem}_advanced.mp4"
     csv_out = OUTPUT_FOLDER / f"{path.stem}_detections.csv"
     json_out = OUTPUT_FOLDER / f"{path.stem}_summary.json"
@@ -1625,11 +1756,13 @@ def process_video(path: Path, common: YOLO, custom: YOLO, expert: PrologRiskEngi
     # decodes mp4v output with heavy block artifacts and tearing, which looks
     # like the boxes are lagging the video even though the frames are correct.
     # Fall back to mp4v only if this build cannot open an H.264 writer.
-    writer = cv2.VideoWriter(str(video_out), cv2.VideoWriter_fourcc(*"avc1"), source_fps, (w, h))
+    # The output video always uses the source resolution; frames are upscaled
+    # back from the processing resolution before drawing overlays.
+    writer = cv2.VideoWriter(str(video_out), cv2.VideoWriter_fourcc(*"avc1"), source_fps, (source_w, source_h))
     # getattr keeps this tolerant of writer stand-ins that don't implement isOpened
     if not getattr(writer, "isOpened", lambda: True)():
         print("H.264 writer unavailable; falling back to mp4v")
-        writer = cv2.VideoWriter(str(video_out), cv2.VideoWriter_fourcc(*"mp4v"), source_fps, (w, h))
+        writer = cv2.VideoWriter(str(video_out), cv2.VideoWriter_fourcc(*"mp4v"), source_fps, (source_w, source_h))
 
     # Pipeline items
     @dataclass
@@ -1823,6 +1956,11 @@ def process_video(path: Path, common: YOLO, custom: YOLO, expert: PrologRiskEngi
                         except Exception:
                             pass
                         break
+
+                    # suppress the camera car's own hood / bumper before
+                    # any tracking, TTC, risk, Prolog, or logging
+                    detections = [d for d in detections
+                                  if not is_ego_vehicle(d, h, w)]
 
                     # smoothing and decisions
                     _t = time.perf_counter()
@@ -2024,16 +2162,34 @@ def process_video(path: Path, common: YOLO, custom: YOLO, expert: PrologRiskEngi
                         stats.frames += 1
                         fps_frames += 1
                         video_time = p.video_time
-                        draw_lane(p.frame, p.polygon, p.lane_detected)
+
+                        # Upscale to source resolution and map detection
+                        # coordinates when the frame was downscaled for processing.
+                        if needs_resize:
+                            draw_frame = cv2.resize(p.frame, (source_w, source_h),
+                                                    interpolation=cv2.INTER_LINEAR)
+                            sx = source_w / w
+                            sy = source_h / h
+                            draw_polygon = (p.polygon.astype(np.float32)
+                                            * np.array([sx, sy])).astype(np.int32)
+                        else:
+                            draw_frame = p.frame
+                            sx = sy = 1.0
+                            draw_polygon = p.polygon
+
+                        draw_lane(draw_frame, draw_polygon, p.lane_detected)
                         placed_labels: list[tuple[int, int, int, int]] = []
                         for d in sorted(p.detections, key=lambda x: x.track_key):
-                            draw_detection(p.frame, d, placed_labels, panel_height(p.frame.shape[0]))
-                        draw_panel(p.frame, p.level, p.action, len(p.detections), live_fps, math.inf, p.panel_rule_id, p.panel_explanation)
+                            draw_d = _scale_detection(d, sx, sy)
+                            draw_detection(draw_frame, draw_d, placed_labels,
+                                           panel_height(draw_frame.shape[0], draw_frame.shape[1]))
+                        draw_panel(draw_frame, p.level, p.action, len(p.detections), live_fps, math.inf, p.panel_rule_id, p.panel_explanation)
                         try:
                             if calibrator is not None and getattr(calibrator, "_uncalibrated", False):
-                                cv2.putText(p.frame, "WARNING: USING UNCALIBRATED PERSPECTIVE DEFAULTS",
-                                            (18, p.frame.shape[0] - 14),
-                                            cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 2, cv2.LINE_AA)
+                                _vs = vis_scale(draw_frame.shape[1], draw_frame.shape[0])
+                                cv2.putText(draw_frame, "WARNING: USING UNCALIBRATED PERSPECTIVE DEFAULTS",
+                                            (int(18 * _vs), draw_frame.shape[0] - int(14 * _vs)),
+                                            cv2.FONT_HERSHEY_SIMPLEX, 0.5 * _vs, (0, 0, 255), max(1, int(2 * _vs)), cv2.LINE_AA)
                         except Exception:
                             pass
                         incident_paths: dict[str, str] = {}
@@ -2041,7 +2197,7 @@ def process_video(path: Path, common: YOLO, custom: YOLO, expert: PrologRiskEngi
                             for d in p.detections:
                                 incident = None
                                 if d.risk in {"WARNING", "CRITICAL"} and d.in_lane:
-                                    incident = save_incident(p.frame, path.name, p.frame_no, d, last_incident, video_time)
+                                    incident = save_incident(draw_frame, path.name, p.frame_no, d, last_incident, video_time)
                                     if incident:
                                         stats.incidents += 1
                                         incident_paths[d.track_key] = str(incident)
@@ -2068,7 +2224,7 @@ def process_video(path: Path, common: YOLO, custom: YOLO, expert: PrologRiskEngi
                                     d.explanation,
                                     incident_paths.get(d.track_key, ""),
                                 ])
-                        writer.write(p.frame)
+                        writer.write(draw_frame)
                         next_frame += 1
                     break
 
@@ -2109,18 +2265,35 @@ def process_video(path: Path, common: YOLO, custom: YOLO, expert: PrologRiskEngi
                               f"detections from frame {p.detection_frame_no} (age {age})")
 
                     # overlay info and draw
-                    draw_lane(p.frame, p.polygon, p.lane_detected)
+                    # Upscale to source resolution and map detection
+                    # coordinates when the frame was downscaled for processing.
+                    if needs_resize:
+                        draw_frame = cv2.resize(p.frame, (source_w, source_h),
+                                                interpolation=cv2.INTER_LINEAR)
+                        sx = source_w / w
+                        sy = source_h / h
+                        draw_polygon = (p.polygon.astype(np.float32)
+                                        * np.array([sx, sy])).astype(np.int32)
+                    else:
+                        draw_frame = p.frame
+                        sx = sy = 1.0
+                        draw_polygon = p.polygon
+
+                    draw_lane(draw_frame, draw_polygon, p.lane_detected)
                     frame_labels: list[tuple[int, int, int, int]] = []
                     for d in sorted(p.detections, key=lambda x: x.track_key):
-                        draw_detection(p.frame, d, frame_labels, panel_height(p.frame.shape[0]))
-                    draw_panel(p.frame, p.level, p.action, len(p.detections), live_fps, math.inf, p.panel_rule_id, p.panel_explanation)
+                        draw_d = _scale_detection(d, sx, sy)
+                        draw_detection(draw_frame, draw_d, frame_labels,
+                                       panel_height(draw_frame.shape[0], draw_frame.shape[1]))
+                    draw_panel(draw_frame, p.level, p.action, len(p.detections), live_fps, math.inf, p.panel_rule_id, p.panel_explanation)
 
                     # calibration warning
                     try:
                         if calibrator is not None and getattr(calibrator, "_uncalibrated", False):
-                            cv2.putText(p.frame, "WARNING: USING UNCALIBRATED PERSPECTIVE DEFAULTS",
-                                        (18, p.frame.shape[0] - 14),
-                                        cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 2, cv2.LINE_AA)
+                            _vs = vis_scale(draw_frame.shape[1], draw_frame.shape[0])
+                            cv2.putText(draw_frame, "WARNING: USING UNCALIBRATED PERSPECTIVE DEFAULTS",
+                                        (int(18 * _vs), draw_frame.shape[0] - int(14 * _vs)),
+                                        cv2.FONT_HERSHEY_SIMPLEX, 0.5 * _vs, (0, 0, 255), max(1, int(2 * _vs)), cv2.LINE_AA)
                     except Exception:
                         pass
 
@@ -2130,7 +2303,7 @@ def process_video(path: Path, common: YOLO, custom: YOLO, expert: PrologRiskEngi
                         for d in p.detections:
                             incident = None
                             if d.risk in {"WARNING", "CRITICAL"} and d.in_lane:
-                                incident = save_incident(p.frame, path.name, p.frame_no, d, last_incident, video_time)
+                                incident = save_incident(draw_frame, path.name, p.frame_no, d, last_incident, video_time)
                                 if incident:
                                     stats.incidents += 1
                                     incident_paths[d.track_key] = str(incident)
@@ -2160,9 +2333,19 @@ def process_video(path: Path, common: YOLO, custom: YOLO, expert: PrologRiskEngi
                             ])
 
                     # writer and display must run on main thread
-                    writer.write(p.frame)
+                    writer.write(draw_frame)
                     if display:
-                        cv2.imshow("Advanced AI Road Safety Assistant", p.frame)
+                        # Preview: cap window at 1920x1080 for4K sources
+                        MAX_PW, MAX_PH = 1920, 1080
+                        if draw_frame.shape[1] > MAX_PW or draw_frame.shape[0] > MAX_PH:
+                            _ps = min(MAX_PW / draw_frame.shape[1], MAX_PH / draw_frame.shape[0])
+                            _preview = cv2.resize(draw_frame,
+                                                  (int(draw_frame.shape[1] * _ps),
+                                                   int(draw_frame.shape[0] * _ps)),
+                                                  interpolation=cv2.INTER_AREA)
+                        else:
+                            _preview = draw_frame
+                        cv2.imshow("Advanced AI Road Safety Assistant", _preview)
                         processing_ms = (time.perf_counter() - frame_started) * 1000.0
                         remaining_ms = max(1, int(target_frame_ms - processing_ms))
                         key = cv2.waitKey(remaining_ms) & 0xFF

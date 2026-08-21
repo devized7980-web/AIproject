@@ -79,25 +79,25 @@ class BoxesTests(unittest.TestCase):
             main.cv2.VideoWriter = orig_vw
 
     def test_no_box_without_current_detection(self):
-        h, w = 120, 160
+        h, w = 480, 640
         frames = [np.zeros((h, w, 3), dtype=np.uint8) for _ in range(2)]
 
         def extractor(frame, polygon, name, calib):
             idx = int(frame[0, 0, 0])
             if idx == 0:
-                d = main.Detection(name='car', confidence=0.9, box=(10, 10, 50, 50), source='best.pt',
+                d = main.Detection(name='car', confidence=0.9, box=(200, 300, 350, 400), source='best.pt',
                                    track_key='t0', distance_m=5.0, distance_method='width_fallback',
                                    in_lane=True, lane_overlap=1.0, box_height_ratio=0.3)
-                d.measured_box = (10, 10, 50, 50)
+                d.measured_box = (200, 300, 350, 400)
                 d.box = d.measured_box
                 return [d]
             return []
 
         out = self._run_with_extractor(frames, extractor)
         self.assertEqual(len(out), 2)
-        # first frame should have non-zero pixel at box top-left; second frame unchanged at that pixel
-        self.assertGreater(out[0][10, 10].sum(), 0)
-        self.assertEqual(out[1][10, 10].sum(), 0)
+        # first frame should have non-zero pixel on box border; second frame unchanged
+        self.assertGreater(out[0][300, 250].sum(), 0)
+        self.assertEqual(out[1][300, 250].sum(), 0)
 
     def test_invalid_boxes_rejected(self):
         h, w = 120, 160
