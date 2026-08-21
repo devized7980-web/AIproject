@@ -1723,6 +1723,7 @@ def process_video(path: Path, common: YOLO, custom: YOLO, expert: PrologRiskEngi
     cap = cv2.VideoCapture(str(path))
     if not cap.isOpened():
         print(f"Cannot open {path}")
+        cap.release()
         return
 
     source_w = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
@@ -2376,27 +2377,27 @@ def process_video(path: Path, common: YOLO, custom: YOLO, expert: PrologRiskEngi
         except Exception:
             pass
 
-    # ensure threads are joined
-    stop_event.set()
-    try:
-        reader_t.join(timeout=1.0)
-    except Exception:
-        pass
-    try:
-        worker_t.join(timeout=1.0)
-    except Exception:
-        pass
-
-    finally:
-        # ensure voice worker is stopped no matter how processing ends
+        # ensure threads are joined
+        stop_event.set()
         try:
-            voice.close()
+            reader_t.join(timeout=1.0)
+        except Exception:
+            pass
+        try:
+            worker_t.join(timeout=1.0)
         except Exception:
             pass
 
-    cap.release()
-    writer.release()
-    cv2.destroyAllWindows()
+        # always release video resources so the MP4 moov atom is written
+        try:
+            cap.release()
+        except Exception:
+            pass
+        try:
+            writer.release()
+        except Exception:
+            pass
+        cv2.destroyAllWindows()
 
     elapsed = time.time() - started
     summary = {

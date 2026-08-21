@@ -164,69 +164,73 @@ class DataStore:
                 summary = json.loads(summary_path.read_text(encoding="utf-8"))
             except (json.JSONDecodeError, OSError):
                 continue
-            stem = summary_path.name.replace("_summary.json", "")
-            raw_name = summary.get("video", stem)
-            meta = META.get(raw_name, {})
-            csv_path = self.output / f"{stem}_detections.csv"
-            if not csv_path.exists():
+            try:
+                stem = summary_path.name.replace("_summary.json", "")
+                raw_name = summary.get("video", stem)
+                meta = META.get(raw_name, {})
+                csv_path = self.output / f"{stem}_detections.csv"
+                if not csv_path.exists():
+                    continue
+
+                with csv_path.open(newline="", encoding="utf-8") as f:
+                    rows = list(csv.DictReader(f))
+
+                clean = []
+                for r in rows:
+                    obj = r.get("object", "")
+                    if obj in RELEVANT_CLASSES or DISPLAY_NAMES.get(obj):
+                        r["object"] = DISPLAY_NAMES.get(obj, obj)
+                        clean.append(r)
+
+                duration = max((_f(r.get("video_time_s")) for r in clean), default=0.0)
+
+                # Video resolution (used to normalise box coordinates).
+                w, h = self._video_size(stem, int(_f(summary.get("width"), 1280)), 720)
+
+                object_counts: dict[str, int] = {}
+                risk_counts: dict[str, int] = {}
+                for r in clean:
+                    object_counts[r["object"]] = object_counts.get(r["object"], 0) + 1
+                    rc = r.get("risk", "SAFE")
+                    risk_counts[rc] = risk_counts.get(rc, 0) + 1
+
+                # Full counts from the summary include non-relevant ("noise")
+                # classes — used as a real false-positive proxy.
+                raw_counts = summary.get("object_counts", {})
+                noise_counts = {k: v for k, v in raw_counts.items()
+                                if k not in RELEVANT_CLASSES
+                                and DISPLAY_NAMES.get(k, k) not in object_counts}
+
+                events = build_events(clean, duration, w, h)
+                vid = f"video_{len(self.videos) + 1}"
+                video = {
+                    "id": vid,
+                    "title": meta.get("title", stem.replace("_", " ").title()),
+                    "file": f"{stem}_processed.mp4",
+                    "raw": meta.get("raw", ""),
+                    "thumb": f"{stem}_thumb.jpg",
+                    "location": meta.get("location", "Untagged route"),
+                    "weather": meta.get("weather", "Unknown"),
+                    "duration": mmss(duration),
+                    "frames": int(_f(summary.get("frames"))),
+                    "total_detections": sum(object_counts.values()),
+                    "incidents": int(_f(summary.get("incidents"))),
+                    "minimum_ttc_s": _maybe_float(summary.get("minimum_ttc_s")),
+                    "average_processing_fps": round(_f(summary.get("average_processing_fps")), 2),
+                    "processing_seconds": round(_f(summary.get("processing_seconds")), 1),
+                    "risk_counts": risk_counts,
+                    "object_counts": object_counts,
+                    "noise_counts": noise_counts,
+                    "overall_risk": overall_risk(risk_counts),
+                    "events": events,
+                    "raw_name": raw_name,
+                    "stem": stem,
+                }
+                self.videos.append(video)
+                self.frames[vid] = [self._frame_row(r, w, h) for r in clean]
+            except Exception:
+                # Skip individual corrupted/incomplete videos so the rest still load
                 continue
-
-            with csv_path.open(newline="", encoding="utf-8") as f:
-                rows = list(csv.DictReader(f))
-
-            clean = []
-            for r in rows:
-                obj = r.get("object", "")
-                if obj in RELEVANT_CLASSES or DISPLAY_NAMES.get(obj):
-                    r["object"] = DISPLAY_NAMES.get(obj, obj)
-                    clean.append(r)
-
-            duration = max((_f(r.get("video_time_s")) for r in clean), default=0.0)
-
-            # Video resolution (used to normalise box coordinates).
-            w, h = self._video_size(stem, int(_f(summary.get("width"), 1280)), 720)
-
-            object_counts: dict[str, int] = {}
-            risk_counts: dict[str, int] = {}
-            for r in clean:
-                object_counts[r["object"]] = object_counts.get(r["object"], 0) + 1
-                rc = r.get("risk", "SAFE")
-                risk_counts[rc] = risk_counts.get(rc, 0) + 1
-
-            # Full counts from the summary include non-relevant ("noise")
-            # classes — used as a real false-positive proxy.
-            raw_counts = summary.get("object_counts", {})
-            noise_counts = {k: v for k, v in raw_counts.items()
-                            if k not in RELEVANT_CLASSES
-                            and DISPLAY_NAMES.get(k, k) not in object_counts}
-
-            events = build_events(clean, duration, w, h)
-            vid = f"video_{len(self.videos) + 1}"
-            video = {
-                "id": vid,
-                "title": meta.get("title", stem.replace("_", " ").title()),
-                "file": f"{stem}_processed.mp4",
-                "raw": meta.get("raw", ""),
-                "thumb": f"{stem}_thumb.jpg",
-                "location": meta.get("location", "Untagged route"),
-                "weather": meta.get("weather", "Unknown"),
-                "duration": mmss(duration),
-                "frames": int(_f(summary.get("frames"))),
-                "total_detections": sum(object_counts.values()),
-                "incidents": int(_f(summary.get("incidents"))),
-                "minimum_ttc_s": _maybe_float(summary.get("minimum_ttc_s")),
-                "average_processing_fps": round(_f(summary.get("average_processing_fps")), 2),
-                "processing_seconds": round(_f(summary.get("processing_seconds")), 1),
-                "risk_counts": risk_counts,
-                "object_counts": object_counts,
-                "noise_counts": noise_counts,
-                "overall_risk": overall_risk(risk_counts),
-                "events": events,
-                "raw_name": raw_name,
-                "stem": stem,
-            }
-            self.videos.append(video)
-            self.frames[vid] = [self._frame_row(r, w, h) for r in clean]
 
         # Alerts: the highest-risk transitions, newest first.
         for v in self.videos:
@@ -260,11 +264,14 @@ class DataStore:
         for name in (f"{stem}_advanced.mp4",):
             path = self.output / name
             if path.exists():
-                cap = cv2.VideoCapture(str(path))
-                w = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH)) or default_w
-                h = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT)) or default_h
-                cap.release()
-                return w, h
+                try:
+                    cap = cv2.VideoCapture(str(path))
+                    w = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH)) or default_w
+                    h = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT)) or default_h
+                    cap.release()
+                    return w, h
+                except Exception:
+                    return default_w, default_h
         return default_w, default_h
 
     def _frame_row(self, r: dict, w: int, h: int) -> dict:
