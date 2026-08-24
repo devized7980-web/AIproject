@@ -3,7 +3,8 @@ import {
   Activity, RadioTower, Gauge, Timer, Zap, Car, Users, Cone, BellRing,
   ChevronRight, ShieldAlert,
 } from "lucide-react";
-import { VIDEOS, getVideoFrames } from "../api.js";
+import { getVideoFrames } from "../api.js";
+import { VIDEOS } from "../data.js";
 import { useLiveFeed } from "../useLive.js";
 import { playAlertSound } from "../sound.js";
 import { Panel, Tag, levelColor, levelHue, fmtTtc } from "../ui.jsx";
@@ -13,6 +14,48 @@ const mmss = (s) => {
   if (!Number.isFinite(s) || s < 0) return "00:00";
   return `${String(Math.floor(s / 60)).padStart(2, "0")}:${String(Math.floor(s % 60)).padStart(2, "0")}`;
 };
+
+function uniqueFrameTracks(rows) {
+  const unique = new Map();
+  for (const row of rows) {
+    const key = row.track_id || `${row.name}:${Math.round(row.x)}:${Math.round(row.y)}`;
+    const current = unique.get(key);
+    if (!current || (current.risk === "CRITICAL" ? 1 : 0) < (row.risk === "CRITICAL" ? 1 : 0) || row.conf > current.conf) {
+      unique.set(key, row);
+    }
+  }
+  return [...unique.values()];
+}
+
+const labelText = (d) => {
+  const title = `${String(d.name || "object").toUpperCase()}${d.track_id ? ` #${d.track_id}` : ""}`;
+  const detail = [
+    Number.isFinite(+d.conf) ? `${Math.round(d.conf * 100)}%` : null,
+  ].filter(Boolean).join("  •  ");
+  return { title, detail, status: d.risk === "CRITICAL" ? "CRITICAL" : d.risk };
+};
+
+function placeLabels(rows) {
+  const placed = [];
+  return rows.map((d) => {
+    const label = labelText({ ...d, compact: d.w < 7 });
+    const width = Math.min(44, Math.max(11, (label.title.length + label.detail.length) * 0.47));
+    const height = label.status === "CRITICAL" ? 8 : 5.5;
+    const x = Math.max(0, Math.min(100 - width, d.x));
+    const candidates = [
+      { left: x, top: Math.max(0, d.y - height - 1) },
+      { left: x, top: Math.min(100 - height, d.y + d.h + 1) },
+      { left: Math.max(0, Math.min(100 - width, d.x + d.w - width)), top: Math.max(0, d.y + 1) },
+    ];
+    const overlaps = (a, b) => a.left < b.left + b.width && a.left + width > b.left && a.top < b.top + b.height && a.top + height > b.top;
+    let chosen = candidates.find((candidate) => !placed.some((other) => overlaps(candidate, other))) || candidates[0];
+    for (let shift = 1; placed.some((other) => overlaps(chosen, other)) && shift < 5; shift += 1) {
+      chosen = { ...chosen, left: Math.max(0, Math.min(100 - width, chosen.left + shift * 3)) };
+    }
+    placed.push({ ...chosen, width, height });
+    return { ...d, label, labelStyle: { left: `${chosen.left - d.x}%`, top: `${chosen.top - d.y}%` } };
+  });
+}
 
 function RouteSchematic({ ring, state }) {
   const max = Math.max(...(ring.vehicles || []), ...(ring.potholes || []), 1);
@@ -58,10 +101,10 @@ function RouteSchematic({ ring, state }) {
 }
 
 export default function LiveCommandCenter({ videos }) {
-  const all = videos.length ? videos : VIDEOS;
+  const all = Array.isArray(videos) && videos.length ? videos : VIDEOS;
   const [videoId, setVideoId] = useState(all[0]?.id);
   const video = all.find((v) => v.id === videoId) || all[0];
-  const { feed, mode } = useLiveFeed({ videoId: video?.id, enabled: !!video });
+  const { feed, mode } = useLiveFeed({ videoId: video?.id, video, enabled: !!video });
   const [showOverlay, setShowOverlay] = useState(true);
   const [settings] = useSettingsCtx();
   const lastAlert = useRef(null);
@@ -69,6 +112,10 @@ export default function LiveCommandCenter({ videos }) {
   const [frames, setFrames] = useState([]);
   const [curTime, setCurTime] = useState(0);
   const [stageRatio, setStageRatio] = useState(null);
+
+  useEffect(() => {
+    if (!all.some((v) => v.id === videoId)) setVideoId(all[0]?.id);
+  }, [all, videoId]);
 
   useEffect(() => {
     let on = true;
@@ -98,7 +145,7 @@ export default function LiveCommandCenter({ videos }) {
       const d = Math.abs(f.t - curTime);
       if (d < bd) { bd = d; best = f; }
     }
-    const rows = frames.filter((f) => f.t === best.t).sort((a, b) => b.conf - a.conf);
+    const rows = uniqueFrameTracks(frames.filter((f) => f.t === best.t)).sort((a, b) => b.conf - a.conf);
     const counts = { potholes: 0, vehicles: 0, persons: 0, total: rows.length };
     const prio = { SAFE: 0, CAUTION: 1, WARNING: 2, CRITICAL: 3 };
     let worst = null, wp = -1;
@@ -110,7 +157,7 @@ export default function LiveCommandCenter({ videos }) {
       if (p > wp) { wp = p; worst = r; }
     }
     const state = worst
-      ? { level: worst.risk, action: worst.action.toUpperCase() }
+       ? { level: worst.risk || "SAFE", action: String(worst.action || "CONTINUE CAREFULLY").toUpperCase() }
       : { level: "SAFE", action: "ROAD CLEAR — CONTINUE CAREFULLY" };
     return { rows, counts, state, frame: best.frame, time: best.t };
   }, [frames, curTime]);
@@ -129,8 +176,8 @@ export default function LiveCommandCenter({ videos }) {
     const f = feed || {};
     const c = synced.counts;
     return [
-      { label: "FPS", value: f.fps ? f.fps.toFixed(1) : "—", unit: "fps", Icon: Gauge },
-      { label: "Latency", value: f.latency_ms ? f.latency_ms.toFixed(0) : "—", unit: "ms", Icon: Timer },
+       { label: "FPS", value: Number.isFinite(+f.fps) ? (+f.fps).toFixed(1) : "—", unit: "fps", Icon: Gauge },
+       { label: "Latency", value: Number.isFinite(+f.latency_ms) ? (+f.latency_ms).toFixed(0) : "—", unit: "ms", Icon: Timer },
       { label: "Potholes", value: c.potholes ?? 0, Icon: Cone, accent: "var(--critical)" },
       { label: "Vehicles", value: c.vehicles ?? 0, Icon: Car, accent: "var(--gold)" },
       { label: "Pedestrians", value: c.persons ?? 0, Icon: Users, accent: "var(--caution)" },
@@ -138,6 +185,10 @@ export default function LiveCommandCenter({ videos }) {
     ];
   }, [feed, synced]);
 
+  const overlayRows = useMemo(
+    () => placeLabels([...synced.rows].sort((a, b) => (b.risk === "CRITICAL") - (a.risk === "CRITICAL"))),
+    [synced.rows],
+  );
   const dets = synced.rows.slice(0, 8);
 
   return (
@@ -157,7 +208,7 @@ export default function LiveCommandCenter({ videos }) {
           <label className="sw-select">
             <span>Source</span>
             <select value={video?.id} onChange={(e) => setVideoId(e.target.value)}>
-              {all.map((v) => <option key={v.id} value={v.id}>{v.title.split("—")[0].trim()}</option>)}
+              {all.map((v) => <option key={v.id} value={v.id}>{String(v.title || v.id).split("—")[0].trim()}</option>)}
             </select>
           </label>
         </div>
@@ -186,17 +237,21 @@ export default function LiveCommandCenter({ videos }) {
                 }}
                 onTimeUpdate={(e) => setCurTime(e.currentTarget.currentTime)}
               />
-              {showOverlay && synced.rows.map((d, i) => (
+              {showOverlay && overlayRows.map((d, i) => (
                 <span
-                  key={i}
+                  key={`${d.track_id || d.name}-${d.frame || i}`}
                   className="sw-dbox"
                   data-soft={d.in_lane ? "0" : "1"}
+                  data-risk={d.risk}
                   style={{
                     left: `${d.x}%`, top: `${d.y}%`, width: `${d.w}%`, height: `${d.h}%`,
                     "--bc": levelColor(d.risk),
                   }}
                 >
-                  <em>{d.name} {Math.round(d.conf * 100)}%</em>
+                  <em style={d.labelStyle}>
+                    <strong>{d.label.title}</strong><b className="status">{d.label.status}</b><br />
+                    <span>{d.label.detail}</span>
+                  </em>
                 </span>
               ))}
               <div className="sw-hud">
@@ -204,9 +259,9 @@ export default function LiveCommandCenter({ videos }) {
                   {synced.state.level} — {synced.state.action}
                 </div>
                 <div className="who" style={{ color: "var(--muted)" }}>
-                  {video?.title.split("—")[0]} · {synced.frame != null ? `f${synced.frame}` : "…"} {mmss(synced.time)}
+                  {String(video?.title || video?.id || "").split("—")[0]} · {synced.frame != null ? `f${synced.frame}` : "…"} {mmss(synced.time)}
                 </div>
-                <div className="time">{feed ? `${feed.fps?.toFixed(1)} fps · ${feed.latency_ms?.toFixed(0)} ms` : "—"}</div>
+                <div className="time" data-level={synced.state.level}>{feed ? `${Number.isFinite(+feed.fps) ? (+feed.fps).toFixed(1) : "—"} fps · ${Number.isFinite(+feed.latency_ms) ? (+feed.latency_ms).toFixed(0) : "—"} ms` : "—"}</div>
               </div>
             </div>
           </Panel>
@@ -286,12 +341,13 @@ export default function LiveCommandCenter({ videos }) {
                   <ChevronRight size={15} style={{ color: "var(--muted)", flexShrink: 0 }} />
                 </button>
               )}
-              {(videos.length ? videos : VIDEOS)
-                .flatMap((v) => v.events.map((e) => ({ ...e, video: v.title })))
-                .filter((e) => e.level === "WARNING" || e.level === "CRITICAL")
+               {all
+                 .flatMap((v) => (Array.isArray(v.events) ? v.events : []).map((e) => ({ ...e, video: v.title || "" })))
+                 .filter((e) => e.video === video?.title)
+                 .filter((e) => e.level === "WARNING" || e.level === "CRITICAL")
                 .slice(0, 4)
                 .map((e, i) => (
-                  <div className="sw-alertrow" data-lvl={e.level} key={i}>
+                  <div className="sw-alertrow" data-lvl={e.level} key={`${e.video}-${e.t}-${i}`}>
                     <i className="pulse" style={{ background: levelColor(e.level) }} />
                     <div className="grow" style={{ minWidth: 0 }}>
                       <div className="t sw-truncate">{e.label}</div>
@@ -306,7 +362,7 @@ export default function LiveCommandCenter({ videos }) {
             <div className="sw-engine">
               <div className="row"><span>Detector</span><b>YOLO11n + custom best.pt</b></div>
               <div className="row"><span>Reasoning</span><b>{feed ? (mode === "live" ? "SWI-Prolog live" : "Rule mirror") : "—"}</b></div>
-              <div className="row"><span>Source clip</span><b>{video?.title.split("—")[0]}</b></div>
+              <div className="row"><span>Source clip</span><b>{String(video?.title || video?.id || "—").split("—")[0]}</b></div>
               <div className="row"><span>Weather</span><b>{video?.weather}</b></div>
             </div>
           </Panel>

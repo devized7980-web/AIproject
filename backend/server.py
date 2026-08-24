@@ -32,6 +32,7 @@ from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
+from starlette.exceptions import HTTPException as StarletteHTTPException
 from pydantic import BaseModel, Field
 
 from . import benchmark as bench_mod
@@ -56,6 +57,18 @@ feed = build_feed(STORE, broadcaster)
 
 # In-memory alert state (open / acknowledged / resolved / assignee).
 alert_state: dict[str, dict] = {}
+
+
+class SPAStaticFiles(StaticFiles):
+    """Serve the app shell for client-side page refreshes, not API paths."""
+
+    async def get_response(self, path: str, scope: dict) -> Any:
+        try:
+            return await super().get_response(path, scope)
+        except StarletteHTTPException as exc:
+            if exc.status_code == 404 and scope.get("method") == "GET":
+                return await super().get_response("", scope)
+            raise
 
 
 def _alert_row(a: dict) -> dict:
@@ -349,13 +362,14 @@ def simulate(body: SimulateRequest) -> dict:
 @app.get("/raw/{filename}")
 def raw_video(filename: str) -> FileResponse:
     safe = Path(filename).name
-    path = ROOT / safe
+    path = ROOT / "videos" / safe
     if not path.exists() or path.suffix.lower() not in {".mp4", ".mov", ".avi", ".mkv"}:
         raise HTTPException(404, "not found")
     return FileResponse(path, media_type="video/mp4")
 
 
 # ──────────────────────────────────────────────────────────────── static frontend
-if DIST.exists():
+if PUBLIC_VIDEOS.exists():
     app.mount("/videos", StaticFiles(directory=PUBLIC_VIDEOS), name="videos")
-    app.mount("/", StaticFiles(directory=DIST, html=True), name="frontend")
+if DIST.exists():
+    app.mount("/", SPAStaticFiles(directory=DIST, html=True), name="frontend")

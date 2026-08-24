@@ -78,6 +78,8 @@ DEBUG_PERFORMANCE = False
 # 1 = detect on every frame (best accuracy, slower)
 # 2 = detect every second frame (recommended for smoother playback)
 DISTANCE_SMOOTH_ALPHA = 0.35
+TTC_SMOOTH_ALPHA = 0.45
+BOX_SMOOTH_ALPHA = 0.30
 # Road damage closes on the camera quickly and is detected sporadically, so its
 # distance follows the measurement more closely than a tracked vehicle's.
 ROAD_DAMAGE_DISTANCE_ALPHA = 0.75
@@ -94,12 +96,17 @@ LANE_MIN_DRAW_CONFIDENCE = 0.70     # needs 2+ consecutive good detections befor
 # vehicle detection at the bottom-centre of the frame.  We suppress it
 # when it overlaps a small centred ROI at the bottom, using normalised
 # coordinates so the filter works at any resolution.
-EGO_MIN_BOX_WIDTH_RATIO = 0.22      # box must span ≥ 22 % of frame width
-EGO_TOP_MIN_RATIO = 0.72            # box top must be below 72 % of frame height
-EGO_OVERLAP_MIN_RATIO = 0.40        # ≥ 40 % of box area must fall in the ego ROI
+# Normalized camera-hood ROI. It is evaluated on the processing frame, so it
+# remains correct when inference downsizes a source video.
+EGO_ROI_X1 = 0.25
+EGO_ROI_X2 = 0.75
+EGO_ROI_Y1 = 0.78
+EGO_OVERLAP_MIN_RATIO = 0.25
 
 # Forget a track after it has not been seen for this many detection cycles.
 TRACK_FORGET_AFTER = 20
+TRACK_MAX_AGE = TRACK_FORGET_AFTER
+TRACK_MIN_HITS = 2
 
 # Road damage is stationary in the world but sweeps through image space as the
 # camera vehicle moves, so a constant-velocity prediction diverges from it fast.
@@ -141,8 +148,8 @@ KNOWN_WIDTHS_M = {
 
 LEVEL_PRIORITY = {"SAFE": 0, "CAUTION": 1, "WARNING": 2, "CRITICAL": 3, "ERROR": 4}
 LEVEL_COLORS = {
-    "SAFE": (0, 220, 0), "CAUTION": (0, 255, 255),
-    "WARNING": (0, 165, 255), "CRITICAL": (0, 0, 255),
+    "SAFE": (106, 210, 0), "CAUTION": (0, 176, 255),
+    "WARNING": (0, 165, 255), "CRITICAL": (45, 31, 255),
     "ERROR": (255, 255, 255),
 }
 
@@ -207,6 +214,7 @@ class Detection:
     # "top" or "bottom", chosen once when the track is created and then held for
     # the track's lifetime so the label cannot flip sides between frames.
     label_side: str = "top"
+    track_hits: int = 0
 
     @property
     def x1(self) -> int: return self.box[0]
@@ -926,7 +934,10 @@ class DetectionSmoother:
     def __init__(self) -> None:
         self._filters: dict[str, BoundingBoxKalmanFilter] = {}
         self.distance_state: dict[str, float] = {}
+        self.box_state: dict[str, tuple[float, float, float, float]] = {}
         self.last_seen: dict[str, int] = {}
+        self.hits: dict[str, int] = {}
+        self.track_meta: dict[str, tuple[str, str]] = {}
         self.cycle = 0
         self.label_side: dict[str, str] = {}
         # diagnostics
@@ -965,10 +976,46 @@ class DetectionSmoother:
                 except Exception:
                     pass
 
-        for d in detections:
+        used_keys: set[str] = set()
+        for d in sorted(detections, key=lambda item: item.confidence, reverse=True):
             key = d.track_key
             is_damage = d.name.lower() in ROAD_DAMAGE_CLASSES
             forget_after = ROAD_DAMAGE_FORGET_AFTER if is_damage else TRACK_FORGET_AFTER
+
+            # ByteTrack IDs can be lost when a detector skips a frame. Reattach
+            # a new detector ID to the nearest live track before creating a new
+            # filter. This prevents tiny gaps from resetting box and TTC state.
+            if key not in self._filters:
+                best_key = None
+                best_score = -1.0
+                x1, y1, x2, y2 = d.box
+                dcx, dcy = (x1 + x2) / 2.0, (y1 + y2) / 2.0
+                darea = max(1.0, float((x2 - x1) * (y2 - y1)))
+                for candidate, kf in self._filters.items():
+                    if candidate in used_keys or self.cycle - self.last_seen.get(candidate, -10**9) > forget_after:
+                        continue
+                    if self.track_meta.get(candidate) != (d.source, d.name):
+                        continue
+                    try:
+                        st = kf.state()
+                        pcx, pcy, pw, ph = map(float, st[:4])
+                        px1, py1, px2, py2 = pcx - pw / 2, pcy - ph / 2, pcx + pw / 2, pcy + ph / 2
+                        ix1, iy1, ix2, iy2 = max(x1, px1), max(y1, py1), min(x2, px2), min(y2, py2)
+                        inter = max(0.0, ix2 - ix1) * max(0.0, iy2 - iy1)
+                        union = darea + max(1.0, pw * ph) - inter
+                        iou = inter / union
+                        centre = math.hypot(dcx - pcx, dcy - pcy) / max(1.0, math.hypot(w, h))
+                        size_ratio = max(darea, pw * ph) / max(1.0, min(darea, pw * ph))
+                        score = iou - centre * 0.8 if size_ratio <= 2.4 else -1.0
+                        if (iou >= 0.12 or centre <= 0.055) and score > best_score:
+                            best_key, best_score = candidate, score
+                    except Exception:
+                        continue
+                if best_key is not None:
+                    key = best_key
+                    d.track_key = key
+            used_keys.add(key)
+            self.track_meta.setdefault(key, (d.source, d.name))
 
             x1, y1, x2, y2 = d.box
             # clamp to the frame; a detector box may extend past the edge
@@ -1009,7 +1056,10 @@ class DetectionSmoother:
                 except Exception:
                     self._filters.pop(key, None)
                 self.distance_state[key] = d.distance_m
+                self.box_state[key] = (meas_cx, meas_cy, meas_w, meas_h)
+                self.hits[key] = 1
                 self.last_seen[key] = self.cycle
+                d.track_hits = 1
                 d.box = measured_box  # trust the fresh detection outright
                 d.tracking_source = "yolo"
                 continue
@@ -1030,12 +1080,8 @@ class DetectionSmoother:
             self.distance_state[key] = smoothed_distance
             d.distance_m = round(smoothed_distance, 2)
             self.last_seen[key] = self.cycle
-
-            if is_damage:
-                # Responsiveness over smoothness: draw where it was just seen.
-                d.box = measured_box
-                d.tracking_source = "yolo"
-                continue
+            self.hits[key] = self.hits.get(key, 1) + 1
+            d.track_hits = self.hits[key]
 
             try:
                 st = self._filters[key].state()
@@ -1043,29 +1089,38 @@ class DetectionSmoother:
                 # Reject a filtered box whose size has run away from the
                 # measurement rather than drawing an implausible rectangle.
                 if not (0.5 <= w_px / meas_w <= 2.0 and 0.5 <= h_px / meas_h <= 2.0):
-                    d.box = measured_box
+                    cx, cy, w_px, h_px = meas_cx, meas_cy, meas_w, meas_h
                     d.tracking_source = "yolo"
-                    continue
+                # A short EMA damps residual Kalman/detector size noise while
+                # retaining genuine motion from the corrected state.
+                previous = self.box_state.get(key, (cx, cy, w_px, h_px))
+                alpha = BOX_SMOOTH_ALPHA if not is_damage else min(0.58, BOX_SMOOTH_ALPHA + 0.18)
+                smooth = tuple(alpha * now + (1.0 - alpha) * old for now, old in zip((cx, cy, w_px, h_px), previous))
+                self.box_state[key] = smooth
+                cx, cy, w_px, h_px = smooth
                 nx1 = max(0, min(int(round(cx - w_px / 2.0)), w - 1))
                 ny1 = max(0, min(int(round(cy - h_px / 2.0)), h - 1))
                 nx2 = max(0, min(int(round(cx + w_px / 2.0)), w - 1))
                 ny2 = max(0, min(int(round(cy + h_px / 2.0)), h - 1))
-                if nx2 > nx1 and ny2 > ny1:
-                    d.box = (nx1, ny1, nx2, ny2)
-                    d.tracking_source = "kalman"
-                else:
-                    d.box = measured_box
-                    d.tracking_source = "yolo"
+                d.box = (nx1, ny1, nx2, ny2) if nx2 > nx1 and ny2 > ny1 else measured_box
+                d.tracking_source = "kalman"
             except Exception:
                 d.box = measured_box
                 d.tracking_source = "yolo"
 
-        # Remove stale filters
+        # Remove stale filters using the class-specific missing-frame budget.
         expired = [k for k, last in self.last_seen.items()
-                   if self.cycle - last >= TRACK_FORGET_AFTER]
+                   if self.cycle - last >= (
+                       ROAD_DAMAGE_FORGET_AFTER
+                       if self.track_meta.get(k, ("", ""))[1].lower() in ROAD_DAMAGE_CLASSES
+                       else TRACK_MAX_AGE
+                   )]
         for k in expired:
             self._filters.pop(k, None)
             self.distance_state.pop(k, None)
+            self.box_state.pop(k, None)
+            self.hits.pop(k, None)
+            self.track_meta.pop(k, None)
             self.last_seen.pop(k, None)
             self.label_side.pop(k, None)
             self.deleted_tracks += 1
@@ -1224,6 +1279,18 @@ def deduplicate(items: list[Detection]) -> list[Detection]:
     return kept
 
 
+def visible_tracks(items: list[Detection], confirmed_only: bool = True) -> list[Detection]:
+    """Return one current, confirmed detection per track for all downstream use."""
+    best: dict[str, Detection] = {}
+    for d in items:
+        if confirmed_only and d.track_hits < TRACK_MIN_HITS:
+            continue
+        current = best.get(d.track_key)
+        if current is None or (LEVEL_PRIORITY[d.risk], d.confidence) > (LEVEL_PRIORITY[current.risk], current.confidence):
+            best[d.track_key] = d
+    return list(best.values())
+
+
 def is_ego_vehicle(d: Detection, frame_h: int, frame_w: int) -> bool:
     """Return True if *d* is almost certainly the camera car's own hood/bumper.
 
@@ -1241,15 +1308,14 @@ def is_ego_vehicle(d: Detection, frame_h: int, frame_w: int) -> bool:
     x1, y1, x2, y2 = d.box
     bw = x2 - x1
     bh = y2 - y1
-    if bw < EGO_MIN_BOX_WIDTH_RATIO * frame_w:
-        return False
-    if y1 < EGO_TOP_MIN_RATIO * frame_h:
-        return False
-    # Ego ROI: centred horizontal strip in the bottom 30 % of the frame
-    roi_x1 = int(0.30 * frame_w)
-    roi_x2 = int(0.70 * frame_w)
-    roi_y1 = int(0.70 * frame_h)
+    roi_x1 = int(EGO_ROI_X1 * frame_w)
+    roi_x2 = int(EGO_ROI_X2 * frame_w)
+    roi_y1 = int(EGO_ROI_Y1 * frame_h)
     roi_y2 = frame_h
+    centre_x = (x1 + x2) / 2.0
+    centre_y = (y1 + y2) / 2.0
+    if roi_x1 <= centre_x <= roi_x2 and roi_y1 <= centre_y <= roi_y2:
+        return True
     ox1 = max(x1, roi_x1)
     oy1 = max(y1, roi_y1)
     ox2 = min(x2, roi_x2)
@@ -1324,11 +1390,14 @@ def extract(model: YOLO, frame: np.ndarray, source: str, polygon: np.ndarray, st
     is_damage_model = source != "yolo11n"
     conf = COMMON_MODEL_CONFIDENCE if not is_damage_model else CUSTOM_MODEL_CONFIDENCE
     imgsz = ROAD_DAMAGE_IMAGE_SIZE if is_damage_model else IMAGE_SIZE
-    track_kwargs: dict[str, Any] = dict(persist=True, tracker=TRACKER, conf=conf,
-                                        iou=IOU, imgsz=imgsz, verbose=False)
+    infer_kwargs: dict[str, Any] = dict(conf=conf, iou=IOU, imgsz=imgsz, verbose=False)
     if INFERENCE_DEVICE:
-        track_kwargs["device"] = INFERENCE_DEVICE
-    results = model.track(frame, **track_kwargs)
+        infer_kwargs["device"] = INFERENCE_DEVICE
+    # Raw post-NMS predictions are required here: the ego ROI must be applied
+    # before any tracker can assign an ID or retain state for the hood.
+    results = model.predict(frame, **infer_kwargs) if hasattr(model, "predict") else model.track(
+        frame, persist=True, tracker=TRACKER, **infer_kwargs
+    )
     output: list[Detection] = []
     # common model class whitelist
     COMMON_FILTER = {"person","bicycle","car","motorcycle","bus","truck","traffic light","stop sign","dog","cat","horse","cow","sheep"}
@@ -1350,6 +1419,16 @@ def extract(model: YOLO, frame: np.ndarray, source: str, polygon: np.ndarray, st
             y2 = min(h - 1, y2)
             # reject structurally invalid boxes at the source
             if not is_valid_bbox((x1, y1, x2, y2), (h, w)):
+                continue
+            # This is deliberately before IDs, distance, TTC, and risk fields
+            # are created. A resized inference frame is already represented by
+            # (h, w), so the normalized ROI remains resolution independent.
+            probe = Detection(
+                name=name, confidence=confidence, box=(x1, y1, x2, y2),
+                source=source, track_key="", distance_m=0.0,
+                in_lane=False, lane_overlap=0.0, box_height_ratio=0.0,
+            )
+            if is_ego_vehicle(probe, h, w):
                 continue
             tid = int(box.id[0].item()) if box.id is not None else -1
             overlap = lane_overlap((x1, y1, x2, y2), polygon, (h, w))
@@ -1387,7 +1466,8 @@ def extract(model: YOLO, frame: np.ndarray, source: str, polygon: np.ndarray, st
     return output
 
 
-def update_ttc(d: Detection, history: dict[str, deque[tuple[float, float]]], video_time: float) -> None:
+def update_ttc(d: Detection, history: dict[str, deque[tuple[float, float]]], video_time: float,
+               ttc_state: dict[str, float] | None = None) -> None:
     q = history[d.track_key]
     q.append((video_time, d.distance_m))
     while len(q) > 8:
@@ -1403,7 +1483,13 @@ def update_ttc(d: Detection, history: dict[str, deque[tuple[float, float]]], vid
     # Reject unstable values caused by box jitter.
     if 0.15 <= closing <= 45.0:
         d.closing_speed_mps = closing
-        d.ttc_s = d.distance_m / closing
+        raw_ttc = d.distance_m / closing
+        if ttc_state is not None:
+            previous = ttc_state.get(d.track_key)
+            d.ttc_s = raw_ttc if previous is None else TTC_SMOOTH_ALPHA * raw_ttc + (1.0 - TTC_SMOOTH_ALPHA) * previous
+            ttc_state[d.track_key] = d.ttc_s
+        else:
+            d.ttc_s = raw_ttc
 
 
 def vis_scale(frame_w: int, frame_h: int) -> float:
@@ -1464,48 +1550,74 @@ def draw_detection(frame: np.ndarray, d: Detection,
         return
     vs = vis_scale(w, h)
     color = LEVEL_COLORS[d.risk]
-    box_thickness = max(1, int((2 if d.in_lane else 1) * vs))
+    box_thickness = max(2, min(3, int((3 if d.risk == "CRITICAL" else 2) * vs)))
     cv2.rectangle(frame, (d.x1, d.y1), (d.x2, d.y2), color, box_thickness)
-    ttc = "--" if not math.isfinite(d.ttc_s) else f"{d.ttc_s:.1f}s"
-    label = f"{d.name} {d.confidence:.2f} | {d.distance_m:.1f}m | TTC:{ttc} | {d.risk}"
+    track_id = d.track_key.rsplit(":", 1)[-1]
+    title = f"{d.name.upper()} #{track_id}"
+    # Keep video labels focused on identity and confidence. Distance/TTC remain
+    # available in the safety panels, avoiding wide plates over crowded roads.
+    detail = f"{d.confidence:.0%}"
 
-    font_scale = 0.58 * vs
+    font_scale = 0.38 * vs
     label_thickness = max(1, int(vs))
     font = cv2.FONT_HERSHEY_SIMPLEX
-    (tw, th), _ = cv2.getTextSize(label, font, font_scale, label_thickness)
-    pad_x = int(7 * vs)
-    pad_y = int(7 * vs)
-    lx = max(0, min(d.x1, w - tw - pad_x))
+    pad_x = int(6 * vs)
+    pad_y = int(3 * vs)
+    title_size, _ = cv2.getTextSize(title, font, font_scale, label_thickness)
+    detail_size, _ = cv2.getTextSize(detail, font, font_scale, label_thickness)
+    badge = "CRITICAL" if d.risk == "CRITICAL" else d.risk
+    badge_size, _ = cv2.getTextSize(badge, font, font_scale * 0.82, label_thickness)
+    line_h = max(title_size[1], detail_size[1])
+    label_h = line_h * 2 + pad_y * 2
+    label_w = title_size[0] + badge_size[0] + pad_x * 3
+    label_w = max(label_w, detail_size[0] + pad_x * 2)
 
-    # The side is fixed for the track's lifetime (chosen in DetectionSmoother),
-    # so the label can never flip between above and below the box. Only its
-    # coordinates track the box. Anything that would push it off-screen or under
-    # the status panel is CLAMPED -- never resolved by switching sides.
-    if d.label_side == "bottom":
-        ly = d.y2 + th + pad_y
-    else:
-        ly = d.y1 - pad_y
-    ly = max(top_margin + th + pad_y, min(ly, h - 5))
+    def candidate(x: int, y: int) -> tuple[int, int, int, int] | None:
+        x = max(0, min(x, w - label_w))
+        if y - label_h < top_margin or y > h:
+            return None
+        return (x, y - label_h, x + label_w, y)
 
-    # Minimal collision avoidance: try at most 1 small local offset to reduce
-    # overlap, but never push a label far from its own bounding box.  Labels
-    # that still overlap after one step are left in place so they remain
-    # visually attached to their detection.
+    gap = max(2, int(3 * vs))
+    # Keep the label on the box. Prefer above, then inside, then below; the last
+    # two candidates shift horizontally only, never across the frame.
+    candidates = [c for c in [
+        candidate(d.x1, d.y1 - gap),
+        candidate(d.x1, d.y1 + label_h + gap),
+        candidate(d.x1, d.y2 + label_h + gap),
+        candidate(d.x1 - label_w + d.x2 - d.x1, d.y1 - gap),
+        candidate(d.x2 - label_w, d.y1 - gap),
+    ] if c is not None]
+    chosen = candidates[0] if candidates else candidate(d.x1, max(top_margin + label_h, d.y1 + label_h + gap))
+    if chosen is None:
+        return
     if placed_labels is not None:
-        step = int((th + int(4 * vs)) * (1 if d.label_side == "bottom" else -1))
-        rect = (lx, ly - th - int(2 * vs), lx + tw + pad_x, ly + int(2 * vs))
-        for _ in range(1):
+        for rect in candidates:
             if not any(_rects_overlap(rect, other) for other in placed_labels):
+                chosen = rect
                 break
-            ly += step
-            rect = (lx, ly - th - int(2 * vs), lx + tw + pad_x, ly + int(2 * vs))
-        ly = max(top_margin + th + pad_y, min(ly, h - 5))
-        rect = (lx, ly - th - int(2 * vs), lx + tw + pad_x, ly + int(2 * vs))
-        placed_labels.append(rect)
+        placed_labels.append(chosen)
 
-    # dark plate behind the text so it stays readable over bright road surface
-    cv2.rectangle(frame, (lx, ly - th - int(2 * vs)), (lx + tw + pad_x, ly + int(2 * vs)), (0, 0, 0), -1)
-    cv2.putText(frame, label, (lx + int(3 * vs), ly), font, font_scale, color, label_thickness, cv2.LINE_AA)
+    lx, label_top, _, label_bottom = chosen
+
+    # Blend only the compact label plate, rather than painting a large opaque
+    # strip over the road.
+    plate = frame[label_top:label_bottom, lx:lx + label_w]
+    if plate.size:
+        dark = np.zeros_like(plate)
+        dark[:] = (5, 10, 18)
+        cv2.addWeighted(dark, 0.88, plate, 0.12, 0, plate)
+    cv2.rectangle(frame, (lx, label_top), (lx + label_w - 1, label_bottom - 1), color, max(1, int(vs)))
+    cv2.rectangle(frame, (lx, label_bottom - max(1, int(2 * vs))),
+                  (lx + label_w - 1, label_bottom - 1), color, -1)
+    baseline1 = label_top + pad_y + line_h
+    baseline2 = baseline1 + line_h
+    cv2.putText(frame, title, (lx + pad_x, baseline1), font, font_scale,
+                (235, 240, 248), label_thickness, cv2.LINE_AA)
+    cv2.putText(frame, detail, (lx + pad_x, baseline2), font, font_scale,
+                (235, 240, 248), label_thickness, cv2.LINE_AA)
+    cv2.putText(frame, badge, (lx + label_w - badge_size[0] - pad_x, baseline1),
+                font, font_scale * 0.82, color, label_thickness, cv2.LINE_AA)
 
 
 def draw_panel(frame: np.ndarray, level: str, action: str, count: int, fps: float, ttc: float, rule_id: str = "", explanation: str = "") -> None:
@@ -1794,6 +1906,7 @@ def process_video(path: Path, common: YOLO, custom: YOLO, expert: PrologRiskEngi
     # Initialize resources and shared state
     voice = VoiceAlert(voice_enabled)
     history: dict[str, deque[tuple[float, float]]] = defaultdict(deque)
+    ttc_state: dict[str, float] = {}
     last_incident: dict[str, float] = {}
     stats = RunStats()
     smoother = DetectionSmoother()
@@ -1966,6 +2079,10 @@ def process_video(path: Path, common: YOLO, custom: YOLO, expert: PrologRiskEngi
                     # smoothing and decisions
                     _t = time.perf_counter()
                     detections = smoother.smooth(detections, (h, w), 1.0 / max(1.0, source_fps))
+                    # Only current, confirmed tracker results continue through
+                    # TTC/risk and rendering. This also collapses duplicate
+                    # source/model rows to one physical track per frame.
+                    detections = visible_tracks(detections)
                     if DEBUG_PERFORMANCE:
                         with _pipeline_lock:
                             pipeline_stats["stage_times"]["kalman"].append(time.perf_counter() - _t)
@@ -1974,7 +2091,7 @@ def process_video(path: Path, common: YOLO, custom: YOLO, expert: PrologRiskEngi
                         d.lane_overlap = lane_overlap(d.box, polygon, (h, w))
                         d.in_lane = d.lane_overlap >= 0.18
                         d.box_height_ratio = (d.y2 - d.y1) / max(1, h)
-                        update_ttc(d, history, video_time)
+                        update_ttc(d, history, video_time, ttc_state)
                         try:
                             res = expert.decide(d)
                         except Exception as exc:
@@ -2126,7 +2243,7 @@ def process_video(path: Path, common: YOLO, custom: YOLO, expert: PrologRiskEngi
                 "distance_m", "distance_method", "closing_speed_mps", "ttc_s", "lane_overlap",
                 "x1", "y1", "x2", "y2",
                 "in_lane", "risk", "action", "decision_source", "rule_id", "rule_priority",
-                "competing_rules", "decision_trace", "explanation", "incident_image"
+                 "competing_rules", "decision_trace", "explanation", "incident_image", "track_key"
             ])
 
             while True:
@@ -2180,7 +2297,7 @@ def process_video(path: Path, common: YOLO, custom: YOLO, expert: PrologRiskEngi
 
                         draw_lane(draw_frame, draw_polygon, p.lane_detected)
                         placed_labels: list[tuple[int, int, int, int]] = []
-                        for d in sorted(p.detections, key=lambda x: x.track_key):
+                        for d in sorted(p.detections, key=lambda x: (-LEVEL_PRIORITY[x.risk], x.track_key)):
                             draw_d = _scale_detection(d, sx, sy)
                             draw_detection(draw_frame, draw_d, placed_labels,
                                            panel_height(draw_frame.shape[0], draw_frame.shape[1]))
@@ -2222,8 +2339,9 @@ def process_video(path: Path, common: YOLO, custom: YOLO, expert: PrologRiskEngi
                                     d.rule_priority,
                                     max(0, len(d.decision_trace) - 1),
                                     format_decision_trace(d.decision_trace),
-                                    d.explanation,
-                                    incident_paths.get(d.track_key, ""),
+                                     d.explanation,
+                                     incident_paths.get(d.track_key, ""),
+                                     d.track_key,
                                 ])
                         writer.write(draw_frame)
                         next_frame += 1
@@ -2282,7 +2400,7 @@ def process_video(path: Path, common: YOLO, custom: YOLO, expert: PrologRiskEngi
 
                     draw_lane(draw_frame, draw_polygon, p.lane_detected)
                     frame_labels: list[tuple[int, int, int, int]] = []
-                    for d in sorted(p.detections, key=lambda x: x.track_key):
+                    for d in sorted(p.detections, key=lambda x: (-LEVEL_PRIORITY[x.risk], x.track_key)):
                         draw_d = _scale_detection(d, sx, sy)
                         draw_detection(draw_frame, draw_d, frame_labels,
                                        panel_height(draw_frame.shape[0], draw_frame.shape[1]))
@@ -2329,8 +2447,9 @@ def process_video(path: Path, common: YOLO, custom: YOLO, expert: PrologRiskEngi
                                 d.rule_priority,
                                 max(0, len(d.decision_trace) - 1),
                                 format_decision_trace(d.decision_trace),
-                                d.explanation,
-                                incident_paths.get(d.track_key, ""),
+                                     d.explanation,
+                                     incident_paths.get(d.track_key, ""),
+                                     d.track_key,
                             ])
 
                     # writer and display must run on main thread

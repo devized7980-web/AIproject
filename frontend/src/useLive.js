@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
-import { RAW, VIDEOS } from "./api.js";
+import { RAW } from "./api.js";
+import { VIDEOS } from "./data.js";
 
 const TICK_MS = 210;
 const emptyVideo = (v) => ({
@@ -15,11 +16,11 @@ function simTick(video, idx, prev) {
     const d = Math.abs(e.pct - pct);
     if (d < best) { best = d; ev = e; }
   });
-  const j = Math.sin(idx * 1.7) * 1.4;
   const boxes = ev && ev.boxes ? ev.boxes : [];
   const detections = boxes.map((b, k) => ({
-    x: b.x + j * 0.4, y: b.y + j * 0.3, w: b.w, h: b.h,
-    conf: Math.max(0.2, (ev.confidence || 0.5) + Math.sin(idx + k) * 0.02),
+    x: b.x, y: b.y, w: b.w, h: b.h,
+    track_id: `${ev.object || "object"}-${k + 1}`,
+    conf: ev.confidence || 0.5,
     name: ev.object, risk: ev.level, distance_m: ev.distance_m,
     ttc_s: ev.ttc_s, in_lane: ev.level !== "SAFE", source: "yolo11n",
   }));
@@ -98,7 +99,7 @@ export function liveSource(video) {
   return `/videos/${video?.file}`;
 }
 
-export function useLiveFeed({ videoId, enabled = true }) {
+export function useLiveFeed({ videoId, video: selectedVideo, enabled = true }) {
   const [feed, setFeed] = useState(null);
   const [mode, setMode] = useState("connecting");
   const videoIdRef = useRef(videoId);
@@ -120,7 +121,7 @@ export function useLiveFeed({ videoId, enabled = true }) {
     const startSim = () => {
       if (!alive) return;
       setMode("sim");
-      const video = emptyVideo(VIDEOS.find((v) => v.id === videoIdRef.current) || VIDEOS[0]);
+      const video = emptyVideo(selectedVideo || VIDEOS.find((v) => v.id === videoIdRef.current) || VIDEOS[0]);
       let idx = Math.floor(video.frames * 0.25);
       let prev = {};
       simTimer = setInterval(() => {
@@ -131,19 +132,30 @@ export function useLiveFeed({ videoId, enabled = true }) {
       }, TICK_MS);
     };
 
-    try {
-      ws = new WebSocket(`${location.protocol === "https:" ? "wss" : "ws"}://${location.host}/ws`);
-    } catch {
-      startSim();
-      return () => {};
-    }
+    fetch("/api/health", { signal: AbortSignal.timeout(1500) })
+      .then((r) => { if (!r.ok) throw new Error("backend unavailable"); return r.json(); })
+      .then(() => {
+        if (!alive) return;
+        connect();
+      })
+      .catch(() => startSim());
 
-    ws.onopen = () => { if (alive) setMode("live"); };
-    ws.onmessage = (e) => {
-      try { onMessage.current(JSON.parse(e.data)); } catch { /* ignore */ }
+    const connect = () => {
+      ws = new WebSocket(`${location.protocol === "https:" ? "wss" : "ws"}://${location.host}/ws`);
+      ws.onopen = () => {
+        if (!alive) return;
+        setMode("live");
+        ws.send(JSON.stringify({ type: "select_video", video_id: videoIdRef.current }));
+      };
+      ws.onmessage = (e) => {
+        try {
+          const msg = JSON.parse(e.data);
+          if (!msg.video_id || msg.video_id === videoIdRef.current) onMessage.current(msg);
+        } catch { /* ignore */ }
+      };
+      ws.onclose = () => { if (alive) { setMode("sim"); startSim(); } };
+      ws.onerror = () => { try { ws.close(); } catch { /* noop */ } };
     };
-    ws.onclose = () => { if (alive) { setMode("sim"); startSim(); } };
-    ws.onerror = () => { try { ws.close(); } catch { /* noop */ } };
 
     const selectTimer = setInterval(() => {
       if (ws && ws.readyState === WebSocket.OPEN) {
@@ -157,7 +169,7 @@ export function useLiveFeed({ videoId, enabled = true }) {
       if (simTimer) clearInterval(simTimer);
       try { ws && ws.close(); } catch { /* noop */ }
     };
-  }, [videoId, enabled]);
+  }, [videoId, selectedVideo, enabled]);
 
   return { feed, mode };
 }

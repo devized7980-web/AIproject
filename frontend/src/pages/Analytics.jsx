@@ -7,6 +7,9 @@ import { useSettingsCtx } from "../App.jsx";
 const W = 620, H = 210, PAD = { l: 34, r: 12, t: 16, b: 28 };
 
 function LineChart({ labels, values, color = "var(--gold)" }) {
+  labels = Array.isArray(labels) ? labels : [];
+  values = Array.isArray(values) ? values.map((v) => Number.isFinite(+v) ? +v : 0) : [];
+  if (!values.length) return <div className="sw-empty--panel">No daily safety data available.</div>;
   const max = Math.max(...values, 1) * 1.12;
   const min = Math.min(...values, 0);
   const x = (i) => PAD.l + (i / Math.max(1, values.length - 1)) * (W - PAD.l - PAD.r);
@@ -33,6 +36,9 @@ function LineChart({ labels, values, color = "var(--gold)" }) {
 }
 
 function GroupedBars({ labels, series }) {
+  labels = Array.isArray(labels) ? labels : [];
+  series = Array.isArray(series) ? series.map((s) => ({ ...s, values: Array.isArray(s.values) ? s.values.map((v) => Number.isFinite(+v) ? +v : 0) : [] })) : [];
+  if (!labels.length || !series.length) return <div className="sw-empty--panel">No hazard trend data available.</div>;
   const groups = labels.length;
   const bw = 34, gap = 6;
   const width = Math.min(W - PAD.l - PAD.r, groups * (bw * series.length + gap * (series.length - 1) + 24));
@@ -73,9 +79,11 @@ function GroupedBars({ labels, series }) {
 }
 
 function DailyStack({ daily }) {
+  daily = Array.isArray(daily) ? daily : [];
+  if (!daily.length) return <div className="sw-empty--panel">No daily risk data available.</div>;
   const groups = daily.length;
   const bw = 44;
-  const max = Math.max(...daily.map((d) => Object.values(d.counts).reduce((s, n) => s + n, 0)), 1) * 1.1;
+  const max = Math.max(...daily.map((d) => Object.values(d.counts || {}).reduce((s, n) => s + (+n || 0), 0)), 1) * 1.1;
   return (
     <svg viewBox={`0 0 ${W} ${H}`} className="sw-chart">
       {daily.map((d, i) => {
@@ -84,7 +92,7 @@ function DailyStack({ daily }) {
         return (
           <g key={d.day}>
             {["SAFE", "CAUTION", "WARNING", "CRITICAL"].map((l) => {
-              const h = (d.counts[l] || 0) / max * (H - PAD.t - PAD.b);
+              const h = (d.counts?.[l] || 0) / max * (H - PAD.t - PAD.b);
               y -= h;
               return <rect key={l} x={x} y={y} width={bw} height={h} fill={levelHue(l)} opacity="0.9" />;
             })}
@@ -99,6 +107,7 @@ function DailyStack({ daily }) {
 export default function Analytics({ videos }) {
   const [data, setData] = useState(null);
   const [settings] = useSettingsCtx();
+  const videoCount = Array.isArray(videos) ? videos.length : 0;
 
   useEffect(() => {
     getAnalytics().then(setData);
@@ -106,17 +115,22 @@ export default function Analytics({ videos }) {
 
   if (!data) return <div className="sw-eyebrow">Loading analytics…</div>;
 
-  const t = data.totals;
+  const t = data.totals || {};
+  const riskCounts = t.risk_counts || {};
+  const daily = Array.isArray(data.daily) ? data.daily : [];
+  const locations = Array.isArray(data.locations) ? data.locations : [];
+  const trend = data.hazard_trend || {};
   const kpis = [
-    { label: "Clips analysed", value: t.clips ?? videos.length, Icon: Film },
+    { label: "Clips analysed", value: t.clips ?? videoCount, Icon: Film },
     { label: "Frames", value: (t.frames || 0).toLocaleString(), Icon: Film },
     { label: "Detections", value: (t.detections || 0).toLocaleString(), Icon: ScanLine },
     { label: "Incidents saved", value: t.incidents || 0, accent: "var(--critical)", Icon: ShieldAlert },
-    { label: "Lowest TTC", value: t.min_ttc == null ? "—" : t.min_ttc.toFixed(2), unit: "s", accent: "var(--warning)", Icon: Timer },
+    { label: "Lowest TTC", value: Number.isFinite(+t.min_ttc) ? (+t.min_ttc).toFixed(2) : "—", unit: "s", accent: "var(--warning)", Icon: Timer },
     { label: "Avg processing", value: t.avg_fps ?? "—", unit: "fps", Icon: Gauge },
   ];
-  const ba = data.before_after;
-  const riskTotal = Object.values(t.risk_counts || {}).reduce((s, n) => s + n, 0) || 1;
+  const ba = data.before_after || { before: {}, after: {}, reduction_pct: {} };
+  const baRows = Object.entries(ba.before || {}).filter(([k, v]) => Number.isFinite(+v) && +v > 0 && Number.isFinite(+(ba.after || {})[k]));
+  const riskTotal = Object.values(riskCounts).reduce((s, n) => s + (+n || 0), 0) || 1;
 
   return (
     <>
@@ -133,17 +147,17 @@ export default function Analytics({ videos }) {
       <div className="sw-2col" style={{ gridTemplateColumns: "300px minmax(0,1fr)" }}>
         <div className="sw-stack">
           <Panel title="Overall safety score">
-            <ScoreGauge score={data.safety_score} />
+             <ScoreGauge score={Number.isFinite(+data.safety_score) ? +data.safety_score : 0} />
             <div style={{ marginTop: 16 }}>
               <div className="sw-eyebrow" style={{ marginBottom: 8 }}>Risk distribution (all runs)</div>
               <div className="sw-riskbar">
                 {["SAFE", "CAUTION", "WARNING", "CRITICAL"].map((l) => (
-                  <span key={l} style={{ width: `${(t.risk_counts[l] || 0) / riskTotal * 100}%`, background: levelColor(l) }} />
+                  <span key={l} style={{ width: `${(riskCounts[l] || 0) / riskTotal * 100}%`, background: levelColor(l) }} />
                 ))}
               </div>
               <div className="sw-legend">
                 {["SAFE", "CAUTION", "WARNING", "CRITICAL"].map((l) => (
-                  <div key={l}><i className="sw-dot" style={{ background: levelColor(l) }} />{l} <b>{t.risk_counts[l] || 0}</b></div>
+                  <div key={l}><i className="sw-dot" style={{ background: levelColor(l) }} />{l} <b>{riskCounts[l] || 0}</b></div>
                 ))}
               </div>
             </div>
@@ -152,15 +166,16 @@ export default function Analytics({ videos }) {
           <Panel title="Most dangerous locations">
             <HBars
               color="var(--critical)"
-              data={data.locations.map((l) => ({
-                label: l.video.split("—")[0].trim(),
-                value: l.danger,
+               data={locations.map((l) => ({
+                 label: String(l.video || l.name || "Unknown route").split("—")[0].trim(),
+                 value: Number.isFinite(+l.danger) ? +l.danger : 0,
                 color: levelHue(l.danger >= 60 ? "CRITICAL" : l.danger >= 35 ? "WARNING" : "CAUTION"),
               }))}
             />
-            {data.locations.map((l) => (
-              <div className="sw-row" key={l.name}>
-                <div className="grow sw-truncate">{l.video}</div>
+             {locations.length === 0 && <div className="sw-eyebrow">No location data available.</div>}
+             {locations.map((l, i) => (
+               <div className="sw-row" key={`${l.name || "route"}-${i}`}>
+                 <div className="grow sw-truncate">{l.video || l.name || "Unknown route"}</div>
                 <div className="num" style={{ color: levelColor(l.safety_score >= 80 ? "SAFE" : l.safety_score >= 55 ? "CAUTION" : "CRITICAL") }}>
                   {l.critical} critical
                 </div>
@@ -171,37 +186,37 @@ export default function Analytics({ videos }) {
 
         <div className="sw-stack">
           <Panel title="Safety score by day" right={<span className="sw-eyebrow">rolling 7-day</span>}>
-            <LineChart labels={data.daily.map((d) => d.day)} values={data.daily.map((d) => d.safety_score)} color="var(--safe)" />
+             <LineChart labels={daily.map((d) => d.day || "")} values={daily.map((d) => d.safety_score)} color="var(--safe)" />
           </Panel>
 
           <Panel title="Daily risk mix" right={<span className="sw-eyebrow">stacked detections</span>}>
-            <DailyStack daily={data.daily} />
+             <DailyStack daily={daily} />
           </Panel>
 
           <div className="sw-2col" style={{ gridTemplateColumns: "minmax(0,1fr) minmax(0,1fr)" }}>
             <Panel title="Hazards by clip">
               <GroupedBars
-                labels={data.hazard_trend.labels}
+                labels={trend.labels}
                 series={[
-                  { name: "Vehicles", color: "#94A3B8", values: data.hazard_trend.vehicles },
-                  { name: "Pedestrians", color: levelHue("CAUTION"), values: data.hazard_trend.pedestrians },
-                  { name: "Potholes", color: levelHue("CRITICAL"), values: data.hazard_trend.potholes },
+                  { name: "Vehicles", color: "#94A3B8", values: trend.vehicles },
+                  { name: "Pedestrians", color: levelHue("CAUTION"), values: trend.pedestrians },
+                  { name: "Potholes", color: levelHue("CRITICAL"), values: trend.potholes },
                 ]}
               />
             </Panel>
             <Panel title="Before vs after detection system">
               <div className="sw-ba">
-                {Object.entries(ba.before).map(([k, v]) => (
+                {baRows.map(([k, v]) => (
                   <div className="ba-row" key={k}>
                     <span className="l" style={{ textTransform: "capitalize" }}>{k.replace(/_/g, " ")}</span>
                     <div className="bars">
-                      <span className="before" style={{ width: `${(ba.after[k] / ba.before[k]) * 100}%` }}>
+                         <span className="before" style={{ width: `${Math.min(100, (ba.after[k] / v) * 100)}%` }}>
                         <i style={{ width: "100%" }} />
                         <em>{v}{k === "response_time_s" ? "s" : "%"}</em>
                       </span>
                     </div>
                     <div className="bars after">
-                      <span style={{ width: `${(ba.after[k] / ba.before[k]) * 100}%` }}><i />
+                       <span style={{ width: `${Math.min(100, (ba.after[k] / v) * 100)}%` }}><i />
                         <em>{ba.after[k]}{k === "response_time_s" ? "s" : "%"}</em>
                       </span>
                     </div>

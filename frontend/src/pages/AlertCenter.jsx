@@ -22,7 +22,8 @@ export default function AlertCenter({ videos }) {
   const seen = useRef(new Set());
 
   useEffect(() => {
-    getAlerts().then((list) => {
+    getAlerts().then((value) => {
+      const list = Array.isArray(value) ? value : [];
       const fresh = list.filter((a) => !seen.current.has(a.id));
       fresh.forEach((a) => seen.current.add(a.id));
       setNewIds(fresh.map((a) => a.id));
@@ -105,7 +106,7 @@ export default function AlertCenter({ videos }) {
               <div className="body grow" style={{ minWidth: 0 }}>
                 <div className="row1">
                   <Tag level={a.level} />
-                  <span className="time">{a.video_title.split("—")[0]} · {a.time}</span>
+                   <span className="time">{String(a.video_title || "Unknown clip").split("—")[0]} · {a.time || "--:--"}</span>
                   {a.status !== "open" && <span className="st" data-s={a.status}>{a.status}</span>}
                 </div>
                 <div className="t sw-truncate">{a.label}</div>

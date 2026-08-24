@@ -76,6 +76,22 @@ def _maybe_float(value: object) -> float | None:
         return None
 
 
+def _is_ego_row(row: dict, width: int, height: int) -> bool:
+    """Defensive page-data filter for outputs generated before the pipeline fix."""
+    x1, y1, x2, y2 = (_f(row.get(k)) for k in ("x1", "y1", "x2", "y2"))
+    if x2 <= x1 or y2 <= y1 or width <= 0 or height <= 0:
+        return False
+    roi_x1, roi_x2 = width * 0.25, width * 0.75
+    roi_y1 = height * 0.78
+    cx, cy = (x1 + x2) / 2, (y1 + y2) / 2
+    if roi_x1 <= cx <= roi_x2 and roi_y1 <= cy <= height:
+        return True
+    ox1, oy1 = max(x1, roi_x1), max(y1, roi_y1)
+    ox2, oy2 = min(x2, roi_x2), min(y2, height)
+    overlap = max(0.0, ox2 - ox1) * max(0.0, oy2 - oy1)
+    return overlap / max(1.0, (x2 - x1) * (y2 - y1)) >= 0.25
+
+
 def overall_risk(risk_counts: dict) -> str:
     total = sum(risk_counts.values()) or 1
     score = sum(LEVEL_WEIGHT[l] * risk_counts.get(l, 0) for l in LEVEL_WEIGHT) / total
@@ -115,6 +131,7 @@ def make_event(row: dict, t: float, duration: float, w: int, h: int) -> dict:
                 "tag": f"{obj} {conf:.0%}",
             }
         ],
+        "track_id": _track_id(row.get("track_key")),
     }
 
 
@@ -148,6 +165,13 @@ def build_events(rows: list[dict], duration: float, w: int, h: int) -> list[dict
     return events
 
 
+def _track_id(value: object) -> str | None:
+    """Expose the stable local identity without leaking stream keys."""
+    if not value:
+        return None
+    return str(value).rsplit(":", 1)[-1] or None
+
+
 class DataStore:
     """Loads output/ once and exposes structured views for the API."""
 
@@ -167,9 +191,12 @@ class DataStore:
             try:
                 stem = summary_path.name.replace("_summary.json", "")
                 raw_name = summary.get("video", stem)
+                if not raw_name or str(raw_name).lower() == "null" or stem in {"batch", "null"}:
+                    continue
                 meta = META.get(raw_name, {})
                 csv_path = self.output / f"{stem}_detections.csv"
-                if not csv_path.exists():
+                processed_path = self.output / f"{stem}_advanced.mp4"
+                if not csv_path.exists() or not processed_path.exists():
                     continue
 
                 with csv_path.open(newline="", encoding="utf-8") as f:
@@ -182,10 +209,10 @@ class DataStore:
                         r["object"] = DISPLAY_NAMES.get(obj, obj)
                         clean.append(r)
 
-                duration = max((_f(r.get("video_time_s")) for r in clean), default=0.0)
-
                 # Video resolution (used to normalise box coordinates).
                 w, h = self._video_size(stem, int(_f(summary.get("width"), 1280)), 720)
+                clean = [r for r in clean if not _is_ego_row(r, w, h)]
+                duration = max((_f(r.get("video_time_s")) for r in clean), default=0.0)
 
                 object_counts: dict[str, int] = {}
                 risk_counts: dict[str, int] = {}
@@ -202,6 +229,9 @@ class DataStore:
                                 and DISPLAY_NAMES.get(k, k) not in object_counts}
 
                 events = build_events(clean, duration, w, h)
+                clean_ttc = [_f(r.get("ttc_s"), math.inf) for r in clean]
+                minimum_ttc = min((v for v in clean_ttc if math.isfinite(v)), default=None)
+                has_alerting_row = any(LEVEL_PRIORITY.get(r.get("risk", "SAFE"), 0) >= 2 for r in clean)
                 vid = f"video_{len(self.videos) + 1}"
                 video = {
                     "id": vid,
@@ -214,8 +244,8 @@ class DataStore:
                     "duration": mmss(duration),
                     "frames": int(_f(summary.get("frames"))),
                     "total_detections": sum(object_counts.values()),
-                    "incidents": int(_f(summary.get("incidents"))),
-                    "minimum_ttc_s": _maybe_float(summary.get("minimum_ttc_s")),
+                    "incidents": int(_f(summary.get("incidents"))) if has_alerting_row else 0,
+                    "minimum_ttc_s": None if minimum_ttc is None else round(minimum_ttc, 3),
                     "average_processing_fps": round(_f(summary.get("average_processing_fps")), 2),
                     "processing_seconds": round(_f(summary.get("processing_seconds")), 1),
                     "risk_counts": risk_counts,
@@ -292,6 +322,7 @@ class DataStore:
             "in_lane": str(r.get("in_lane", "False")).lower() == "true",
             "risk": r.get("risk", "SAFE"),
             "action": r.get("action", "").replace("_", " "),
+            "track_id": _track_id(r.get("track_key")),
         }
 
     def counts(self) -> dict:

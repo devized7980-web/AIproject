@@ -1,24 +1,24 @@
 {
   "video": "road_video_1.mp4.MP4",
   "frames": 363,
-  "total_detections": 1222,
+  "total_detections": 1219,
   "risk_counts": {
-    "SAFE": 1089,
-    "CAUTION": 92,
-    "WARNING": 37,
-    "CRITICAL": 4
+    "SAFE": 1074,
+    "CAUTION": 99,
+    "WARNING": 36,
+    "CRITICAL": 10
   },
   "object_counts": {
     "person": 297,
-    "car": 702,
+    "car": 699,
     "bus": 166,
     "longitudinal": 1,
     "truck": 56
   },
-  "incidents": 6,
-  "minimum_ttc_s": 0.624,
-  "processing_seconds": 13.19,
-  "average_processing_fps": 27.69,
+  "incidents": 5,
+  "minimum_ttc_s": 0.646,
+  "processing_seconds": 12.21,
+  "average_processing_fps": 29.91,
   "detection_interval": 1,
   "low_light_frames": 14,
   "night_video": false,
@@ -36,22 +36,21 @@
     "uncalibrated_defaults": true
   },
   "pipeline": {
-    "max_read_queue": 2,
-    "max_result_queue": 8,
-    "inference_avg_s": 0.0316,
+    "max_read_queue": 8,
+    "max_result_queue": 0,
+    "inference_avg_s": 0.0334,
     "dropped_frames": 0
   },
   "triggered_rule_counts": {
-    "object_outside_vehicle_lane": 1055,
-    "object_at_safe_distance": 34,
-    "caution_object_in_vehicle_lane": 92,
-    "vehicle_following_distance": 19,
-    "brake_now_object_too_close": 2,
-    "generic_warning": 18,
-    "brake_immediately_person_ahead": 2
+    "object_outside_vehicle_lane": 1039,
+    "object_at_safe_distance": 35,
+    "caution_object_in_vehicle_lane": 99,
+    "vehicle_following_distance": 24,
+    "brake_now_object_too_close": 10,
+    "generic_warning": 12
   },
   "decision_source_counts": {
-    "prolog": 1222
+    "prolog": 1219
   },
   "triggered_rule_examples": {
     "object_outside_vehicle_lane": "Object is outside the vehicle lane and not an immediate collision threat.",
@@ -59,17 +58,15 @@
     "caution_object_in_vehicle_lane": "Object detected in vehicle lane; exercise caution.",
     "vehicle_following_distance": "Reduce speed and increase following distance to maintain a safe gap.",
     "brake_now_object_too_close": "Object detected very close; immediate braking advised.",
-    "generic_warning": "Slow down: hazard detected ahead in vehicle lane.",
-    "brake_immediately_person_ahead": "Immediate braking required due to person in lane."
+    "generic_warning": "Slow down: hazard detected ahead in vehicle lane."
   },
   "rule_conflicts": {
-    "detections_with_conflicts": 1188,
+    "detections_with_conflicts": 1184,
     "overridden_rule_counts": {
-      "object_at_safe_distance": 1188,
-      "generic_warning": 23,
-      "caution_object_in_vehicle_lane": 41,
-      "vehicle_following_distance": 2,
-      "brake_now_object_too_close": 2
+      "object_at_safe_distance": 1184,
+      "generic_warning": 34,
+      "caution_object_in_vehicle_lane": 46,
+      "vehicle_following_distance": 10
     },
     "rule_priorities": {
       "brake_immediately_person_ahead": 100,
@@ -89,7 +86,327 @@
     "examples": [
       {
         "object": "car",
-        "frame": 193,
+        "frame": 168,
+        "winner": {
+          "rule_id": "brake_now_object_too_close",
+          "risk": "CRITICAL",
+          "priority": 90,
+          "explanation": "Object detected very close; immediate braking advised."
+        },
+        "overridden": [
+          {
+            "rule_id": "vehicle_following_distance",
+            "risk": "WARNING",
+            "priority": 60,
+            "explanation": "Reduce speed and increase following distance to maintain a safe gap.",
+            "winner": false
+          },
+          {
+            "rule_id": "generic_warning",
+            "risk": "WARNING",
+            "priority": 55,
+            "explanation": "Slow down: hazard detected ahead in vehicle lane.",
+            "winner": false
+          },
+          {
+            "rule_id": "caution_object_in_vehicle_lane",
+            "risk": "CAUTION",
+            "priority": 40,
+            "explanation": "Object detected in vehicle lane; exercise caution.",
+            "winner": false
+          },
+          {
+            "rule_id": "object_at_safe_distance",
+            "risk": "SAFE",
+            "priority": 20,
+            "explanation": "Object is at a safe distance.",
+            "winner": false
+          }
+        ]
+      },
+      {
+        "object": "car",
+        "frame": 169,
+        "winner": {
+          "rule_id": "brake_now_object_too_close",
+          "risk": "CRITICAL",
+          "priority": 90,
+          "explanation": "Object detected very close; immediate braking advised."
+        },
+        "overridden": [
+          {
+            "rule_id": "vehicle_following_distance",
+            "risk": "WARNING",
+            "priority": 60,
+            "explanation": "Reduce speed and increase following distance to maintain a safe gap.",
+            "winner": false
+          },
+          {
+            "rule_id": "generic_warning",
+            "risk": "WARNING",
+            "priority": 55,
+            "explanation": "Slow down: hazard detected ahead in vehicle lane.",
+            "winner": false
+          },
+          {
+            "rule_id": "caution_object_in_vehicle_lane",
+            "risk": "CAUTION",
+            "priority": 40,
+            "explanation": "Object detected in vehicle lane; exercise caution.",
+            "winner": false
+          },
+          {
+            "rule_id": "object_at_safe_distance",
+            "risk": "SAFE",
+            "priority": 20,
+            "explanation": "Object is at a safe distance.",
+            "winner": false
+          }
+        ]
+      },
+      {
+        "object": "car",
+        "frame": 170,
+        "winner": {
+          "rule_id": "brake_now_object_too_close",
+          "risk": "CRITICAL",
+          "priority": 90,
+          "explanation": "Object detected very close; immediate braking advised."
+        },
+        "overridden": [
+          {
+            "rule_id": "vehicle_following_distance",
+            "risk": "WARNING",
+            "priority": 60,
+            "explanation": "Reduce speed and increase following distance to maintain a safe gap.",
+            "winner": false
+          },
+          {
+            "rule_id": "generic_warning",
+            "risk": "WARNING",
+            "priority": 55,
+            "explanation": "Slow down: hazard detected ahead in vehicle lane.",
+            "winner": false
+          },
+          {
+            "rule_id": "caution_object_in_vehicle_lane",
+            "risk": "CAUTION",
+            "priority": 40,
+            "explanation": "Object detected in vehicle lane; exercise caution.",
+            "winner": false
+          },
+          {
+            "rule_id": "object_at_safe_distance",
+            "risk": "SAFE",
+            "priority": 20,
+            "explanation": "Object is at a safe distance.",
+            "winner": false
+          }
+        ]
+      },
+      {
+        "object": "car",
+        "frame": 171,
+        "winner": {
+          "rule_id": "brake_now_object_too_close",
+          "risk": "CRITICAL",
+          "priority": 90,
+          "explanation": "Object detected very close; immediate braking advised."
+        },
+        "overridden": [
+          {
+            "rule_id": "vehicle_following_distance",
+            "risk": "WARNING",
+            "priority": 60,
+            "explanation": "Reduce speed and increase following distance to maintain a safe gap.",
+            "winner": false
+          },
+          {
+            "rule_id": "generic_warning",
+            "risk": "WARNING",
+            "priority": 55,
+            "explanation": "Slow down: hazard detected ahead in vehicle lane.",
+            "winner": false
+          },
+          {
+            "rule_id": "caution_object_in_vehicle_lane",
+            "risk": "CAUTION",
+            "priority": 40,
+            "explanation": "Object detected in vehicle lane; exercise caution.",
+            "winner": false
+          },
+          {
+            "rule_id": "object_at_safe_distance",
+            "risk": "SAFE",
+            "priority": 20,
+            "explanation": "Object is at a safe distance.",
+            "winner": false
+          }
+        ]
+      },
+      {
+        "object": "car",
+        "frame": 172,
+        "winner": {
+          "rule_id": "brake_now_object_too_close",
+          "risk": "CRITICAL",
+          "priority": 90,
+          "explanation": "Object detected very close; immediate braking advised."
+        },
+        "overridden": [
+          {
+            "rule_id": "vehicle_following_distance",
+            "risk": "WARNING",
+            "priority": 60,
+            "explanation": "Reduce speed and increase following distance to maintain a safe gap.",
+            "winner": false
+          },
+          {
+            "rule_id": "generic_warning",
+            "risk": "WARNING",
+            "priority": 55,
+            "explanation": "Slow down: hazard detected ahead in vehicle lane.",
+            "winner": false
+          },
+          {
+            "rule_id": "caution_object_in_vehicle_lane",
+            "risk": "CAUTION",
+            "priority": 40,
+            "explanation": "Object detected in vehicle lane; exercise caution.",
+            "winner": false
+          },
+          {
+            "rule_id": "object_at_safe_distance",
+            "risk": "SAFE",
+            "priority": 20,
+            "explanation": "Object is at a safe distance.",
+            "winner": false
+          }
+        ]
+      },
+      {
+        "object": "car",
+        "frame": 173,
+        "winner": {
+          "rule_id": "brake_now_object_too_close",
+          "risk": "CRITICAL",
+          "priority": 90,
+          "explanation": "Object detected very close; immediate braking advised."
+        },
+        "overridden": [
+          {
+            "rule_id": "vehicle_following_distance",
+            "risk": "WARNING",
+            "priority": 60,
+            "explanation": "Reduce speed and increase following distance to maintain a safe gap.",
+            "winner": false
+          },
+          {
+            "rule_id": "generic_warning",
+            "risk": "WARNING",
+            "priority": 55,
+            "explanation": "Slow down: hazard detected ahead in vehicle lane.",
+            "winner": false
+          },
+          {
+            "rule_id": "caution_object_in_vehicle_lane",
+            "risk": "CAUTION",
+            "priority": 40,
+            "explanation": "Object detected in vehicle lane; exercise caution.",
+            "winner": false
+          },
+          {
+            "rule_id": "object_at_safe_distance",
+            "risk": "SAFE",
+            "priority": 20,
+            "explanation": "Object is at a safe distance.",
+            "winner": false
+          }
+        ]
+      },
+      {
+        "object": "car",
+        "frame": 174,
+        "winner": {
+          "rule_id": "brake_now_object_too_close",
+          "risk": "CRITICAL",
+          "priority": 90,
+          "explanation": "Object detected very close; immediate braking advised."
+        },
+        "overridden": [
+          {
+            "rule_id": "vehicle_following_distance",
+            "risk": "WARNING",
+            "priority": 60,
+            "explanation": "Reduce speed and increase following distance to maintain a safe gap.",
+            "winner": false
+          },
+          {
+            "rule_id": "generic_warning",
+            "risk": "WARNING",
+            "priority": 55,
+            "explanation": "Slow down: hazard detected ahead in vehicle lane.",
+            "winner": false
+          },
+          {
+            "rule_id": "caution_object_in_vehicle_lane",
+            "risk": "CAUTION",
+            "priority": 40,
+            "explanation": "Object detected in vehicle lane; exercise caution.",
+            "winner": false
+          },
+          {
+            "rule_id": "object_at_safe_distance",
+            "risk": "SAFE",
+            "priority": 20,
+            "explanation": "Object is at a safe distance.",
+            "winner": false
+          }
+        ]
+      },
+      {
+        "object": "car",
+        "frame": 175,
+        "winner": {
+          "rule_id": "brake_now_object_too_close",
+          "risk": "CRITICAL",
+          "priority": 90,
+          "explanation": "Object detected very close; immediate braking advised."
+        },
+        "overridden": [
+          {
+            "rule_id": "vehicle_following_distance",
+            "risk": "WARNING",
+            "priority": 60,
+            "explanation": "Reduce speed and increase following distance to maintain a safe gap.",
+            "winner": false
+          },
+          {
+            "rule_id": "generic_warning",
+            "risk": "WARNING",
+            "priority": 55,
+            "explanation": "Slow down: hazard detected ahead in vehicle lane.",
+            "winner": false
+          },
+          {
+            "rule_id": "caution_object_in_vehicle_lane",
+            "risk": "CAUTION",
+            "priority": 40,
+            "explanation": "Object detected in vehicle lane; exercise caution.",
+            "winner": false
+          },
+          {
+            "rule_id": "object_at_safe_distance",
+            "risk": "SAFE",
+            "priority": 20,
+            "explanation": "Object is at a safe distance.",
+            "winner": false
+          }
+        ]
+      },
+      {
+        "object": "car",
+        "frame": 176,
         "winner": {
           "rule_id": "brake_now_object_too_close",
           "risk": "CRITICAL",
@@ -142,86 +459,6 @@
             "risk": "WARNING",
             "priority": 60,
             "explanation": "Reduce speed and increase following distance to maintain a safe gap.",
-            "winner": false
-          },
-          {
-            "rule_id": "generic_warning",
-            "risk": "WARNING",
-            "priority": 55,
-            "explanation": "Slow down: hazard detected ahead in vehicle lane.",
-            "winner": false
-          },
-          {
-            "rule_id": "caution_object_in_vehicle_lane",
-            "risk": "CAUTION",
-            "priority": 40,
-            "explanation": "Object detected in vehicle lane; exercise caution.",
-            "winner": false
-          },
-          {
-            "rule_id": "object_at_safe_distance",
-            "risk": "SAFE",
-            "priority": 20,
-            "explanation": "Object is at a safe distance.",
-            "winner": false
-          }
-        ]
-      },
-      {
-        "object": "person",
-        "frame": 356,
-        "winner": {
-          "rule_id": "brake_immediately_person_ahead",
-          "risk": "CRITICAL",
-          "priority": 100,
-          "explanation": "Immediate braking required due to person in lane."
-        },
-        "overridden": [
-          {
-            "rule_id": "brake_now_object_too_close",
-            "risk": "CRITICAL",
-            "priority": 90,
-            "explanation": "Object detected very close; immediate braking advised.",
-            "winner": false
-          },
-          {
-            "rule_id": "generic_warning",
-            "risk": "WARNING",
-            "priority": 55,
-            "explanation": "Slow down: hazard detected ahead in vehicle lane.",
-            "winner": false
-          },
-          {
-            "rule_id": "caution_object_in_vehicle_lane",
-            "risk": "CAUTION",
-            "priority": 40,
-            "explanation": "Object detected in vehicle lane; exercise caution.",
-            "winner": false
-          },
-          {
-            "rule_id": "object_at_safe_distance",
-            "risk": "SAFE",
-            "priority": 20,
-            "explanation": "Object is at a safe distance.",
-            "winner": false
-          }
-        ]
-      },
-      {
-        "object": "person",
-        "frame": 357,
-        "winner": {
-          "rule_id": "brake_immediately_person_ahead",
-          "risk": "CRITICAL",
-          "priority": 100,
-          "explanation": "Immediate braking required due to person in lane."
-        },
-        "overridden": [
-          {
-            "rule_id": "brake_now_object_too_close",
-            "risk": "CRITICAL",
-            "priority": 90,
-            "explanation": "Object detected very close; immediate braking advised.",
             "winner": false
           },
           {

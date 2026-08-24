@@ -88,6 +88,9 @@ class LiveFeed:
             if not any(v["id"] == video_id for v in self.store.videos):
                 return False
             self.video_id = video_id
+            self.snapshot = self._blank_snapshot()
+            self._ring.clear()
+            self._alert_ring.clear()
             return True
 
     def start(self) -> None:
@@ -170,6 +173,7 @@ class LiveFeed:
                 "conf": r["conf"], "name": name, "risk": r["risk"],
                 "distance_m": r["distance_m"], "ttc_s": r["ttc_s"],
                 "in_lane": r["in_lane"], "source": r["source"],
+                "track_id": r.get("track_id"),
             })
 
         state = {"level": "SAFE", "action": "ROAD CLEAR — CONTINUE CAREFULLY"}

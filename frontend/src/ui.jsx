@@ -10,7 +10,7 @@ export const levelColor = (l) =>
   }[l] || "var(--muted)");
 
 export const Tag = ({ level }) => (
-  <span className="sw-tag" style={{ color: levelColor(level), borderColor: levelColor(level) }}>
+  <span className="sw-tag" data-level={level} style={{ color: levelColor(level), borderColor: levelColor(level) }}>
     {level}
   </span>
 );

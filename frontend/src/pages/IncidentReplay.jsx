@@ -3,8 +3,8 @@ import {
   Play, Pause, StepBack, StepForward, Download, FileText, Video as VideoIcon,
   Waves, ScanLine, Activity,
 } from "lucide-react";
-import { VIDEOS } from "../api.js";
 import { getVideoFrames } from "../api.js";
+import { VIDEOS } from "../data.js";
 import { Panel, Tag, levelColor, fmtTtc } from "../ui.jsx";
 import { useSettingsCtx } from "../App.jsx";
 
@@ -49,9 +49,10 @@ function buildReport(video, ev, engine) {
 }
 
 export default function IncidentReplay({ videos }) {
-  const all = videos.length ? videos : VIDEOS;
+  const all = Array.isArray(videos) && videos.length ? videos : VIDEOS;
   const [videoId, setVideoId] = useState(all[0]?.id);
-  const video = all.find((v) => v.id === videoId) || all[0];
+  const selected = all.find((v) => v.id === videoId) || all[0];
+  const video = selected ? { ...selected, events: Array.isArray(selected.events) ? selected.events : [] } : null;
 
   const [active, setActive] = useState(0);
   const [playing, setPlaying] = useState(false);
@@ -59,6 +60,7 @@ export default function IncidentReplay({ videos }) {
   const [duration, setDuration] = useState(0);
   const [currentTime, setCurrentTime] = useState(0);
   const [src, setSrc] = useState("");
+  const [videoError, setVideoError] = useState(false);
   const [rawMode, setRawMode] = useState(false);
   const [frames, setFrames] = useState([]);
   const [report, setReport] = useState(null);
@@ -66,14 +68,22 @@ export default function IncidentReplay({ videos }) {
   const videoRef = useRef(null);
 
   useEffect(() => {
+    if (!all.some((v) => v.id === videoId)) setVideoId(all[0]?.id);
+  }, [all, videoId]);
+
+  useEffect(() => {
+    let current = true;
     setActive(0);
     setProgress(video?.events?.[0]?.pct ?? 0);
     setPlaying(false);
     setDuration(0);
     setCurrentTime(0);
     setReport(null);
-    setSrc(video?.raw ? `/raw/${video.raw}` : `/videos/${video?.file}`);
-    getVideoFrames(video?.id).then((d) => setFrames(d?.frames || []));
+    setVideoError(false);
+    setSrc(video?.raw ? `/raw/${video.raw}` : video?.file ? `/videos/${video.file}` : "");
+    if (!video?.id) return () => { current = false; };
+    getVideoFrames(video.id).then((d) => { if (current) setFrames(Array.isArray(d?.frames) ? d.frames : []); });
+    return () => { current = false; };
   }, [video?.id]);
 
   const ev = video?.events?.[active];
@@ -136,7 +146,7 @@ export default function IncidentReplay({ videos }) {
       y: b.y + seed * 0.6,
       w: b.w + Math.abs(seed) * 1.4,
       h: b.h + Math.abs(seed) * 1.1,
-      tag: `${ev.object} ${Math.max(0.05, ev.confidence - 0.08 + seed / 20).toFixed(0)}%`,
+       tag: `${ev.object || "object"} ${Math.max(0.05, (+ev.confidence || 0) - 0.08 + seed / 20).toFixed(0)}%`,
     }));
   }, [ev, rawMode, currentTime, active]);
 
@@ -156,7 +166,7 @@ export default function IncidentReplay({ videos }) {
     try { await navigator.clipboard.writeText(report); } catch { window.prompt("Copy report:", report); }
   };
 
-  if (!video) return null;
+  if (!video) return <div className="sw-empty--panel">No videos available for incident replay.</div>;
 
   return (
     <>
@@ -189,7 +199,7 @@ export default function IncidentReplay({ videos }) {
             }
           >
             <div className="sw-stage">
-              {src ? (
+              {src && !videoError ? (
                 <video
                   ref={videoRef}
                   src={src}
@@ -198,9 +208,12 @@ export default function IncidentReplay({ videos }) {
                   onTimeUpdate={syncFromVideo}
                   onPlay={() => setPlaying(true)}
                   onPause={() => setPlaying(false)}
-                  onError={() => src.startsWith("/raw/") && setSrc(`/videos/${video.file}`)}
-                />
-              ) : null}
+                   onError={() => {
+                     if (src.startsWith("/raw/") && video.file) setSrc(`/videos/${video.file}`);
+                     else setVideoError(true);
+                   }}
+                 />
+               ) : <div className="sw-empty">Processed video unavailable for this clip.</div>}
               {boxes.map((b, i) => (
                 <span
                   key={i}
@@ -211,7 +224,10 @@ export default function IncidentReplay({ videos }) {
                     "--bc": levelColor(ev?.level),
                   }}
                 >
-                  <em>{b.tag || ev?.label}</em>
+                  <em>
+                    <strong>{String(ev?.object || "OBJECT").toUpperCase()} {ev?.track_id ? `#${ev.track_id}` : ""}</strong><b className="status">{ev?.level || "SAFE"}</b><br />
+                    <span>{Number.isFinite(+ev?.confidence) ? `${Math.round(ev.confidence * 100)}%` : "—"}</span>
+                  </em>
                 </span>
               ))}
               <div className="sw-hud">
@@ -219,7 +235,7 @@ export default function IncidentReplay({ videos }) {
                   {ev?.level} — {ev?.action}
                 </div>
                 <div className="who" style={{ color: "var(--muted)" }}>
-                  {ev?.distance_m} m · TTC {fmtTtc(ev?.ttc_s)} · {Math.round(ev?.confidence * 100)}%
+                  {ev?.distance_m ?? "—"} m · TTC {fmtTtc(ev?.ttc_s)} · {Number.isFinite(+ev?.confidence) ? Math.round(ev.confidence * 100) : "—"}%
                 </div>
                 <div className="time">{mmss(currentTime)} / {duration ? mmss(duration) : video.duration}</div>
               </div>
@@ -261,7 +277,7 @@ export default function IncidentReplay({ videos }) {
                   <b style={{ color: levelColor(f.risk) }}>{f.risk}</b>
                   <span className="obj" style={{ textTransform: "capitalize" }}>{f.object}</span>
                   <span className="meta">{mmss(f.t)} · {f.distance_m} m</span>
-                  <small>{Math.round(f.conf * 100)}% · {f.source}</small>
+                   <small>{Number.isFinite(+f.conf) ? Math.round(f.conf * 100) : "—"}% · {f.source || "detector"}</small>
                 </button>
               ))}
             </div>
@@ -297,7 +313,7 @@ export default function IncidentReplay({ videos }) {
                 <b>AI Explainer</b> to see exactly which rule fired and why.
               </span>
             </div>
-            <button className="sw-reportbtn" onClick={generate}><FileText size={15} /> Generate incident report</button>
+            <button className="sw-reportbtn" onClick={generate} disabled={!ev}><FileText size={15} /> Generate incident report</button>
             {report && (
               <div className="sw-report">
                 <div className="sw-report-h">
