@@ -61,6 +61,7 @@ export default function IncidentReplay({ videos }) {
   const [currentTime, setCurrentTime] = useState(0);
   const [src, setSrc] = useState("");
   const [videoError, setVideoError] = useState(false);
+  const [usingProcessed, setUsingProcessed] = useState(false);
   const [rawMode, setRawMode] = useState(false);
   const [frames, setFrames] = useState([]);
   const [report, setReport] = useState(null);
@@ -80,6 +81,7 @@ export default function IncidentReplay({ videos }) {
     setCurrentTime(0);
     setReport(null);
     setVideoError(false);
+    setUsingProcessed(!video?.raw);
     setSrc(video?.raw ? `/raw/${video.raw}` : video?.file ? `/videos/${video.file}` : "");
     if (!video?.id) return () => { current = false; };
     getVideoFrames(video.id).then((d) => { if (current) setFrames(Array.isArray(d?.frames) ? d.frames : []); });
@@ -209,12 +211,15 @@ export default function IncidentReplay({ videos }) {
                   onPlay={() => setPlaying(true)}
                   onPause={() => setPlaying(false)}
                    onError={() => {
-                     if (src.startsWith("/raw/") && video.file) setSrc(`/videos/${video.file}`);
+                     if (src.startsWith("/raw/") && video.file) {
+                       setUsingProcessed(true);
+                       setSrc(`/videos/${video.file}`);
+                     }
                      else setVideoError(true);
                    }}
                  />
                ) : <div className="sw-empty">Processed video unavailable for this clip.</div>}
-              {boxes.map((b, i) => (
+               {!usingProcessed && boxes.map((b, i) => (
                 <span
                   key={i}
                   className="sw-dbox"

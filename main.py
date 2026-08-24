@@ -79,7 +79,9 @@ DEBUG_PERFORMANCE = False
 # 2 = detect every second frame (recommended for smoother playback)
 DISTANCE_SMOOTH_ALPHA = 0.35
 TTC_SMOOTH_ALPHA = 0.45
-BOX_SMOOTH_ALPHA = 0.30
+# Fresh matched detections should lead the rendered box; the Kalman filter is
+# retained for association and short misses, not used as a lagging display box.
+BOX_SMOOTH_ALPHA = 0.68
 # Road damage closes on the camera quickly and is detected sporadically, so its
 # distance follows the measurement more closely than a tracked vehicle's.
 ROAD_DAMAGE_DISTANCE_ALPHA = 0.75
@@ -1085,17 +1087,17 @@ class DetectionSmoother:
 
             try:
                 st = self._filters[key].state()
-                cx, cy, w_px, h_px = float(st[0]), float(st[1]), float(st[2]), float(st[3])
+                cx, cy, w_px, h_px = meas_cx, meas_cy, meas_w, meas_h
                 # Reject a filtered box whose size has run away from the
                 # measurement rather than drawing an implausible rectangle.
                 if not (0.5 <= w_px / meas_w <= 2.0 and 0.5 <= h_px / meas_h <= 2.0):
                     cx, cy, w_px, h_px = meas_cx, meas_cy, meas_w, meas_h
                     d.tracking_source = "yolo"
-                # A short EMA damps residual Kalman/detector size noise while
-                # retaining genuine motion from the corrected state.
+                # Use the fresh matched measurement heavily for display while
+                # retaining a small amount of temporal stability.
                 previous = self.box_state.get(key, (cx, cy, w_px, h_px))
                 alpha = BOX_SMOOTH_ALPHA if not is_damage else min(0.58, BOX_SMOOTH_ALPHA + 0.18)
-                smooth = tuple(alpha * now + (1.0 - alpha) * old for now, old in zip((cx, cy, w_px, h_px), previous))
+                smooth = tuple(alpha * now + (1.0 - alpha) * old for now, old in zip((meas_cx, meas_cy, meas_w, meas_h), previous))
                 self.box_state[key] = smooth
                 cx, cy, w_px, h_px = smooth
                 nx1 = max(0, min(int(round(cx - w_px / 2.0)), w - 1))
@@ -1552,43 +1554,28 @@ def draw_detection(frame: np.ndarray, d: Detection,
     color = LEVEL_COLORS[d.risk]
     box_thickness = max(2, min(3, int((3 if d.risk == "CRITICAL" else 2) * vs)))
     cv2.rectangle(frame, (d.x1, d.y1), (d.x2, d.y2), color, box_thickness)
-    track_id = d.track_key.rsplit(":", 1)[-1]
-    title = f"{d.name.upper()} #{track_id}"
-    # Keep video labels focused on identity and confidence. Distance/TTC remain
-    # available in the safety panels, avoiding wide plates over crowded roads.
-    detail = f"{d.confidence:.0%}"
+    ttc = "--" if not math.isfinite(d.ttc_s) else f"{d.ttc_s:.1f}s"
+    # This is the compact single-line renderer used by the reference output.
+    label = f"{d.name} {d.confidence:.2f} | {d.distance_m:.1f}m | TTC:{ttc} | {d.risk}"
+    font, scale, thickness = cv2.FONT_HERSHEY_SIMPLEX, 0.48 * vs, max(1, int(vs))
+    (tw, th), _ = cv2.getTextSize(label, font, scale, thickness)
+    pad = max(3, int(4 * vs))
+    label_w, label_h = tw + pad * 2, th + pad * 2
 
-    font_scale = 0.38 * vs
-    label_thickness = max(1, int(vs))
-    font = cv2.FONT_HERSHEY_SIMPLEX
-    pad_x = int(6 * vs)
-    pad_y = int(3 * vs)
-    title_size, _ = cv2.getTextSize(title, font, font_scale, label_thickness)
-    detail_size, _ = cv2.getTextSize(detail, font, font_scale, label_thickness)
-    badge = "CRITICAL" if d.risk == "CRITICAL" else d.risk
-    badge_size, _ = cv2.getTextSize(badge, font, font_scale * 0.82, label_thickness)
-    line_h = max(title_size[1], detail_size[1])
-    label_h = line_h * 2 + pad_y * 2
-    label_w = title_size[0] + badge_size[0] + pad_x * 3
-    label_w = max(label_w, detail_size[0] + pad_x * 2)
-
-    def candidate(x: int, y: int) -> tuple[int, int, int, int] | None:
+    def candidate(x: int, baseline: int) -> tuple[int, int, int, int] | None:
         x = max(0, min(x, w - label_w))
-        if y - label_h < top_margin or y > h:
+        if baseline - label_h < top_margin or baseline > h:
             return None
-        return (x, y - label_h, x + label_w, y)
+        return (x, baseline - label_h, x + label_w, baseline)
 
     gap = max(2, int(3 * vs))
-    # Keep the label on the box. Prefer above, then inside, then below; the last
-    # two candidates shift horizontally only, never across the frame.
     candidates = [c for c in [
         candidate(d.x1, d.y1 - gap),
+        candidate(d.x2 - label_w, d.y1 - gap),
         candidate(d.x1, d.y1 + label_h + gap),
         candidate(d.x1, d.y2 + label_h + gap),
-        candidate(d.x1 - label_w + d.x2 - d.x1, d.y1 - gap),
-        candidate(d.x2 - label_w, d.y1 - gap),
     ] if c is not None]
-    chosen = candidates[0] if candidates else candidate(d.x1, max(top_margin + label_h, d.y1 + label_h + gap))
+    chosen = candidates[0] if candidates else None
     if chosen is None:
         return
     if placed_labels is not None:
@@ -1599,25 +1586,14 @@ def draw_detection(frame: np.ndarray, d: Detection,
         placed_labels.append(chosen)
 
     lx, label_top, _, label_bottom = chosen
-
-    # Blend only the compact label plate, rather than painting a large opaque
-    # strip over the road.
+    # Match the reference's small dark single-line plate.
     plate = frame[label_top:label_bottom, lx:lx + label_w]
     if plate.size:
         dark = np.zeros_like(plate)
         dark[:] = (5, 10, 18)
         cv2.addWeighted(dark, 0.88, plate, 0.12, 0, plate)
-    cv2.rectangle(frame, (lx, label_top), (lx + label_w - 1, label_bottom - 1), color, max(1, int(vs)))
-    cv2.rectangle(frame, (lx, label_bottom - max(1, int(2 * vs))),
-                  (lx + label_w - 1, label_bottom - 1), color, -1)
-    baseline1 = label_top + pad_y + line_h
-    baseline2 = baseline1 + line_h
-    cv2.putText(frame, title, (lx + pad_x, baseline1), font, font_scale,
-                (235, 240, 248), label_thickness, cv2.LINE_AA)
-    cv2.putText(frame, detail, (lx + pad_x, baseline2), font, font_scale,
-                (235, 240, 248), label_thickness, cv2.LINE_AA)
-    cv2.putText(frame, badge, (lx + label_w - badge_size[0] - pad_x, baseline1),
-                font, font_scale * 0.82, color, label_thickness, cv2.LINE_AA)
+    cv2.putText(frame, label, (lx + pad, label_bottom - pad), font, scale,
+                color, thickness, cv2.LINE_AA)
 
 
 def draw_panel(frame: np.ndarray, level: str, action: str, count: int, fps: float, ttc: float, rule_id: str = "", explanation: str = "") -> None:
