@@ -8,8 +8,8 @@ import os
 
 # Load main.py as a module via importlib to avoid import path issues in tests
 spec = importlib.util.spec_from_file_location("main", os.path.join(os.path.dirname(__file__), "..", "main.py"))
-main = importlib.util.module_from_spec(spec)
 assert spec is not None
+main = importlib.util.module_from_spec(spec)
 import sys
 sys.modules["main"] = main
 spec.loader.exec_module(main)  # type: ignore
@@ -51,7 +51,7 @@ class VoiceTests(unittest.TestCase):
     def test_engine_initialized_once_and_sequential(self):
         recorder: list = []
         mod = EngineModule(recorder)
-        main.pyttsx3 = mod
+        setattr(main, "pyttsx3", mod)
 
         v = main.VoiceAlert(enabled=True, capacity=8)
 
@@ -69,7 +69,7 @@ class VoiceTests(unittest.TestCase):
     def test_cooldown_suppresses_repeats(self):
         recorder: list = []
         mod = EngineModule(recorder)
-        main.pyttsx3 = mod
+        setattr(main, "pyttsx3", mod)
         v = main.VoiceAlert(enabled=True, capacity=8)
 
         v.speak("car:WARNING", "msg")
@@ -84,7 +84,7 @@ class VoiceTests(unittest.TestCase):
     def test_disabled_voice_creates_no_engine(self):
         recorder: list = []
         mod = EngineModule(recorder)
-        main.pyttsx3 = mod
+        setattr(main, "pyttsx3", mod)
         v = main.VoiceAlert(enabled=False)
 
         v.speak("x:WARNING", "nope")
@@ -95,7 +95,7 @@ class VoiceTests(unittest.TestCase):
     def test_tts_exceptions_do_not_crash(self):
         recorder: list = []
         mod = EngineModule(recorder, raise_on={"bad"})
-        main.pyttsx3 = mod
+        setattr(main, "pyttsx3", mod)
         v = main.VoiceAlert(enabled=True, capacity=8)
 
         v.speak("a:WARNING", "bad")

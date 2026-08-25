@@ -230,8 +230,7 @@ export default function IncidentReplay({ videos }) {
                   }}
                 >
                   <em>
-                    <strong>{String(ev?.object || "OBJECT").toUpperCase()} {ev?.track_id ? `#${ev.track_id}` : ""}</strong><b className="status">{ev?.level || "SAFE"}</b><br />
-                    <span>{Number.isFinite(+ev?.confidence) ? `${Math.round(ev.confidence * 100)}%` : "—"}</span>
+                    <strong>{String(ev?.object || "object").replaceAll("_", " ")} {Number.isFinite(+ev?.confidence) ? (+ev.confidence).toFixed(2) : "--"} | {Number.isFinite(+ev?.distance_m) ? `${(+ev.distance_m).toFixed(1)}m` : "--"} | TTC:{Number.isFinite(+ev?.ttc_s) ? `${(+ev.ttc_s).toFixed(1)}s` : "--"} | {ev?.level || "SAFE"}</strong>
                   </em>
                 </span>
               ))}

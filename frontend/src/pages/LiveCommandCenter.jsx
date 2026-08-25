@@ -28,24 +28,24 @@ function uniqueFrameTracks(rows) {
 }
 
 const labelText = (d) => {
-  const title = `${String(d.name || "object").toUpperCase()}${d.track_id ? ` #${d.track_id}` : ""}`;
-  const detail = [
-    Number.isFinite(+d.conf) ? `${Math.round(d.conf * 100)}%` : null,
-  ].filter(Boolean).join("  •  ");
-  return { title, detail, status: d.risk === "CRITICAL" ? "CRITICAL" : d.risk };
+  const name = String(d.name || "object").replaceAll("_", " ");
+  const conf = Number.isFinite(+d.conf) ? (+d.conf).toFixed(2) : "--";
+  const distance = Number.isFinite(+d.distance_m) ? `${(+d.distance_m).toFixed(1)}m` : "--";
+  const ttc = Number.isFinite(+d.ttc_s) ? `${(+d.ttc_s).toFixed(1)}s` : "--";
+  return { title: `${name} ${conf} | ${distance} | TTC:${ttc} | ${d.risk || "SAFE"}` };
 };
 
 function placeLabels(rows) {
   const placed = [];
   return rows.map((d) => {
     const label = labelText({ ...d, compact: d.w < 7 });
-    const width = Math.min(44, Math.max(11, (label.title.length + label.detail.length) * 0.47));
-    const height = label.status === "CRITICAL" ? 8 : 5.5;
+    const width = Math.min(58, Math.max(18, label.title.length * 0.52 + 2));
+    const height = 5.5;
     const x = Math.max(0, Math.min(100 - width, d.x));
     const candidates = [
       { left: x, top: Math.max(0, d.y - height - 1) },
-      { left: x, top: Math.min(100 - height, d.y + d.h + 1) },
-      { left: Math.max(0, Math.min(100 - width, d.x + d.w - width)), top: Math.max(0, d.y + 1) },
+      { left: Math.max(0, Math.min(100 - width, d.x + d.w - width)), top: Math.max(0, d.y - height - 1) },
+      { left: x, top: Math.min(100 - height, d.y + 1) },
     ];
     const overlaps = (a, b) => a.left < b.left + b.width && a.left + width > b.left && a.top < b.top + b.height && a.top + height > b.top;
     let chosen = candidates.find((candidate) => !placed.some((other) => overlaps(candidate, other))) || candidates[0];
@@ -112,6 +112,7 @@ export default function LiveCommandCenter({ videos }) {
   const [frames, setFrames] = useState([]);
   const [curTime, setCurTime] = useState(0);
   const [stageRatio, setStageRatio] = useState(null);
+  const sourceFps = Number(video?.source_fps) > 0 ? Number(video.source_fps) : 30;
 
   useEffect(() => {
     if (!all.some((v) => v.id === videoId)) setVideoId(all[0]?.id);
@@ -130,6 +131,20 @@ export default function LiveCommandCenter({ videos }) {
     return () => { on = false; };
   }, [video?.id]);
 
+  // onTimeUpdate is intentionally too sparse for a moving box. Sample the
+  // presented video clock every animation frame instead of using processing FPS.
+  useEffect(() => {
+    const element = videoRef.current;
+    if (!element) return undefined;
+    let raf = 0;
+    const sample = () => {
+      setCurTime(element.currentTime || 0);
+      raf = requestAnimationFrame(sample);
+    };
+    raf = requestAnimationFrame(sample);
+    return () => cancelAnimationFrame(raf);
+  }, [video?.id]);
+
   const synced = useMemo(() => {
     const empty = {
       rows: [],
@@ -139,13 +154,14 @@ export default function LiveCommandCenter({ videos }) {
       time: 0,
     };
     if (!frames.length) return empty;
+    const targetFrame = Math.round(curTime * sourceFps) + 1;
     let best = frames[0];
     let bd = Infinity;
     for (const f of frames) {
-      const d = Math.abs(f.t - curTime);
+      const d = Math.abs((Number.isFinite(+f.frame) ? +f.frame : Math.round(f.t * sourceFps) + 1) - targetFrame);
       if (d < bd) { bd = d; best = f; }
     }
-    const rows = uniqueFrameTracks(frames.filter((f) => f.t === best.t)).sort((a, b) => b.conf - a.conf);
+    const rows = uniqueFrameTracks(frames.filter((f) => f.frame === best.frame)).sort((a, b) => b.conf - a.conf);
     const counts = { potholes: 0, vehicles: 0, persons: 0, total: rows.length };
     const prio = { SAFE: 0, CAUTION: 1, WARNING: 2, CRITICAL: 3 };
     let worst = null, wp = -1;
@@ -160,7 +176,7 @@ export default function LiveCommandCenter({ videos }) {
        ? { level: worst.risk || "SAFE", action: String(worst.action || "CONTINUE CAREFULLY").toUpperCase() }
       : { level: "SAFE", action: "ROAD CLEAR — CONTINUE CAREFULLY" };
     return { rows, counts, state, frame: best.frame, time: best.t };
-  }, [frames, curTime]);
+  }, [frames, curTime, sourceFps]);
 
   useEffect(() => {
     const a = feed?.alert;
@@ -233,11 +249,10 @@ export default function LiveCommandCenter({ videos }) {
                 muted playsInline loop autoPlay
                 onLoadedMetadata={(e) => {
                   const v = e.currentTarget;
-                  if (v.videoWidth && v.videoHeight) setStageRatio(v.videoWidth / v.videoHeight);
+                 if (v.videoWidth && v.videoHeight) setStageRatio(v.videoWidth / v.videoHeight);
                 }}
-                onTimeUpdate={(e) => setCurTime(e.currentTarget.currentTime)}
               />
-              {showOverlay && overlayRows.map((d, i) => (
+              {showOverlay && video?.raw && overlayRows.map((d, i) => (
                 <span
                   key={`${d.track_id || d.name}-${d.frame || i}`}
                   className="sw-dbox"
@@ -249,8 +264,7 @@ export default function LiveCommandCenter({ videos }) {
                   }}
                 >
                   <em style={d.labelStyle}>
-                    <strong>{d.label.title}</strong><b className="status">{d.label.status}</b><br />
-                    <span>{d.label.detail}</span>
+                    <strong>{d.label.title}</strong>
                   </em>
                 </span>
               ))}

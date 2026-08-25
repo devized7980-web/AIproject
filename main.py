@@ -81,7 +81,7 @@ DISTANCE_SMOOTH_ALPHA = 0.35
 TTC_SMOOTH_ALPHA = 0.45
 # Fresh matched detections should lead the rendered box; the Kalman filter is
 # retained for association and short misses, not used as a lagging display box.
-BOX_SMOOTH_ALPHA = 0.68
+BOX_SMOOTH_ALPHA = 0.70
 # Road damage closes on the camera quickly and is detected sporadically, so its
 # distance follows the measurement more closely than a tracked vehicle's.
 ROAD_DAMAGE_DISTANCE_ALPHA = 0.75
@@ -150,8 +150,8 @@ KNOWN_WIDTHS_M = {
 
 LEVEL_PRIORITY = {"SAFE": 0, "CAUTION": 1, "WARNING": 2, "CRITICAL": 3, "ERROR": 4}
 LEVEL_COLORS = {
-    "SAFE": (106, 210, 0), "CAUTION": (0, 176, 255),
-    "WARNING": (0, 165, 255), "CRITICAL": (45, 31, 255),
+    "SAFE": (0, 210, 106), "CAUTION": (0, 176, 255),
+    "WARNING": (0, 176, 255), "CRITICAL": (45, 31, 255),
     "ERROR": (255, 255, 255),
 }
 
@@ -1093,19 +1093,13 @@ class DetectionSmoother:
                 if not (0.5 <= w_px / meas_w <= 2.0 and 0.5 <= h_px / meas_h <= 2.0):
                     cx, cy, w_px, h_px = meas_cx, meas_cy, meas_w, meas_h
                     d.tracking_source = "yolo"
-                # Use the fresh matched measurement heavily for display while
-                # retaining a small amount of temporal stability.
-                previous = self.box_state.get(key, (cx, cy, w_px, h_px))
-                alpha = BOX_SMOOTH_ALPHA if not is_damage else min(0.58, BOX_SMOOTH_ALPHA + 0.18)
-                smooth = tuple(alpha * now + (1.0 - alpha) * old for now, old in zip((meas_cx, meas_cy, meas_w, meas_h), previous))
-                self.box_state[key] = smooth
-                cx, cy, w_px, h_px = smooth
-                nx1 = max(0, min(int(round(cx - w_px / 2.0)), w - 1))
-                ny1 = max(0, min(int(round(cy - h_px / 2.0)), h - 1))
-                nx2 = max(0, min(int(round(cx + w_px / 2.0)), w - 1))
-                ny2 = max(0, min(int(round(cy + h_px / 2.0)), h - 1))
-                d.box = (nx1, ny1, nx2, ny2) if nx2 > nx1 and ny2 > ny1 else measured_box
-                d.tracking_source = "kalman"
+                # The filter remains responsible for association and internal
+                # continuity, but a fresh detection is the rendered geometry.
+                # Rendering the filtered state here makes moving objects visibly
+                # lag behind their current detector box.
+                self.box_state[key] = (meas_cx, meas_cy, meas_w, meas_h)
+                d.box = measured_box
+                d.tracking_source = "yolo"
             except Exception:
                 d.box = measured_box
                 d.tracking_source = "yolo"
@@ -1506,23 +1500,27 @@ def vis_scale(frame_w: int, frame_h: int) -> float:
               min(frame_w / VIS_REF_W, frame_h / VIS_REF_H)))
 
 
-def draw_lane(frame: np.ndarray, polygon: np.ndarray, detected: bool) -> None:
-    """Draw the lane corridor only while the estimate is trustworthy.
+def draw_lane(frame: np.ndarray, polygon: np.ndarray, detected: bool,
+              show_fallback: bool = False) -> None:
+    """Draw the current lane corridor supplied by the lane-tracking stage.
 
-    Previously an unreliable lane was still drawn, in grey, using the fallback
-    corridor -- so the overlay visibly snapped between the real lane and a fixed
-    triangle. Hiding it is preferable to drawing a shape that is not the lane.
+    The tracker supplies its stable perspective fallback during short detector
+    gaps. Keep that corridor visible so the processed camera feed retains lane
+    guidance instead of silently dropping the lane layer.
     """
-    if not detected:
+    if polygon is None or len(polygon) < 4 or (not detected and not show_fallback):
         return
     vs = vis_scale(frame.shape[1], frame.shape[0])
     overlay = frame.copy()
     color = (255, 220, 0)
     cv2.fillPoly(overlay, [polygon], color)
-    cv2.addWeighted(overlay, 0.14, frame, 0.86, 0, frame)
-    cv2.polylines(frame, [polygon], True, color, max(1, int(2 * vs)))
-    cv2.putText(frame, "LANE DETECTED", tuple(polygon[0]),
-                cv2.FONT_HERSHEY_SIMPLEX, 0.48 * vs, color, max(1, int(2 * vs)), cv2.LINE_AA)
+    cv2.addWeighted(overlay, 0.10 if not detected else 0.14, frame,
+                    0.90 if not detected else 0.86, 0, frame)
+    cv2.polylines(frame, [polygon], True, color, max(2, int(3 * vs)), cv2.LINE_AA)
+    if detected:
+        cv2.putText(frame, "LANE DETECTED", tuple(polygon[0]),
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.48 * vs, color,
+                    max(1, int(2 * vs)), cv2.LINE_AA)
 
 
 def panel_height(frame_height: int, frame_width: int = 0) -> int:
@@ -1552,48 +1550,43 @@ def draw_detection(frame: np.ndarray, d: Detection,
         return
     vs = vis_scale(w, h)
     color = LEVEL_COLORS[d.risk]
-    box_thickness = max(2, min(3, int((3 if d.risk == "CRITICAL" else 2) * vs)))
+    # Keep the reference's crisp two-pixel outline even on small source clips.
+    box_thickness = 3
     cv2.rectangle(frame, (d.x1, d.y1), (d.x2, d.y2), color, box_thickness)
     ttc = "--" if not math.isfinite(d.ttc_s) else f"{d.ttc_s:.1f}s"
-    # This is the compact single-line renderer used by the reference output.
-    label = f"{d.name} {d.confidence:.2f} | {d.distance_m:.1f}m | TTC:{ttc} | {d.risk}"
-    font, scale, thickness = cv2.FONT_HERSHEY_SIMPLEX, 0.48 * vs, max(1, int(vs))
-    (tw, th), _ = cv2.getTextSize(label, font, scale, thickness)
+    distance = "--" if not math.isfinite(d.distance_m) else f"{d.distance_m:.1f}m"
+    label = f"{d.name.replace('_', ' ')} {d.confidence:.2f} | {distance} | TTC:{ttc} | {d.risk}"
+    font, scale, thickness = cv2.FONT_HERSHEY_SIMPLEX, 0.52 * vs, max(1, int(round(2 * vs)))
+    (tw, th), baseline = cv2.getTextSize(label, font, scale, thickness)
     pad = max(3, int(4 * vs))
-    label_w, label_h = tw + pad * 2, th + pad * 2
+    label_w, label_h = tw + pad * 2, th + baseline + pad * 2
 
-    def candidate(x: int, baseline: int) -> tuple[int, int, int, int] | None:
+    def candidate(x: int, y: int) -> tuple[int, int, int, int]:
         x = max(0, min(x, w - label_w))
-        if baseline - label_h < top_margin or baseline > h:
-            return None
-        return (x, baseline - label_h, x + label_w, baseline)
+        y = max(top_margin, min(y, h - label_h))
+        return (x, y, x + label_w, y + label_h)
 
     gap = max(2, int(3 * vs))
-    candidates = [c for c in [
-        candidate(d.x1, d.y1 - gap),
-        candidate(d.x2 - label_w, d.y1 - gap),
-        candidate(d.x1, d.y1 + label_h + gap),
-        candidate(d.x1, d.y2 + label_h + gap),
-    ] if c is not None]
-    chosen = candidates[0] if candidates else None
-    if chosen is None:
-        return
+    candidates = [
+        candidate(d.x1, d.y1 - label_h - gap),
+        candidate(d.x2 - label_w, d.y1 - label_h - gap),
+        candidate(d.x1, d.y1 + pad),
+    ]
+    chosen = candidates[0]
     if placed_labels is not None:
-        for rect in candidates:
-            if not any(_rects_overlap(rect, other) for other in placed_labels):
-                chosen = rect
+        for option in candidates:
+            if not any(_rects_overlap(option, other) for other in placed_labels):
+                chosen = option
                 break
         placed_labels.append(chosen)
 
-    lx, label_top, _, label_bottom = chosen
-    # Match the reference's small dark single-line plate.
-    plate = frame[label_top:label_bottom, lx:lx + label_w]
+    lx, ly, _, _ = chosen
+    plate = frame[ly:ly + label_h, lx:lx + label_w]
     if plate.size:
         dark = np.zeros_like(plate)
-        dark[:] = (5, 10, 18)
-        cv2.addWeighted(dark, 0.88, plate, 0.12, 0, plate)
-    cv2.putText(frame, label, (lx + pad, label_bottom - pad), font, scale,
-                color, thickness, cv2.LINE_AA)
+        cv2.addWeighted(dark, 0.65, plate, 0.35, 0, plate)
+    cv2.putText(frame, label, (lx + pad, ly + label_h - pad - baseline),
+                font, scale, color, thickness, cv2.LINE_AA)
 
 
 def draw_panel(frame: np.ndarray, level: str, action: str, count: int, fps: float, ttc: float, rule_id: str = "", explanation: str = "") -> None:
@@ -2271,21 +2264,12 @@ def process_video(path: Path, common: YOLO, custom: YOLO, expert: PrologRiskEngi
                             sx = sy = 1.0
                             draw_polygon = p.polygon
 
-                        draw_lane(draw_frame, draw_polygon, p.lane_detected)
+                        draw_lane(draw_frame, draw_polygon, p.lane_detected,
+                                  show_fallback=bool(p.detections))
                         placed_labels: list[tuple[int, int, int, int]] = []
                         for d in sorted(p.detections, key=lambda x: (-LEVEL_PRIORITY[x.risk], x.track_key)):
                             draw_d = _scale_detection(d, sx, sy)
-                            draw_detection(draw_frame, draw_d, placed_labels,
-                                           panel_height(draw_frame.shape[0], draw_frame.shape[1]))
-                        draw_panel(draw_frame, p.level, p.action, len(p.detections), live_fps, math.inf, p.panel_rule_id, p.panel_explanation)
-                        try:
-                            if calibrator is not None and getattr(calibrator, "_uncalibrated", False):
-                                _vs = vis_scale(draw_frame.shape[1], draw_frame.shape[0])
-                                cv2.putText(draw_frame, "WARNING: USING UNCALIBRATED PERSPECTIVE DEFAULTS",
-                                            (int(18 * _vs), draw_frame.shape[0] - int(14 * _vs)),
-                                            cv2.FONT_HERSHEY_SIMPLEX, 0.5 * _vs, (0, 0, 255), max(1, int(2 * _vs)), cv2.LINE_AA)
-                        except Exception:
-                            pass
+                            draw_detection(draw_frame, draw_d, placed_labels, 0)
                         incident_paths: dict[str, str] = {}
                         if p.frame_no == 1 or DETECTION_INTERVAL <= 1 or p.frame_no % DETECTION_INTERVAL == 0:
                             for d in p.detections:
@@ -2374,23 +2358,12 @@ def process_video(path: Path, common: YOLO, custom: YOLO, expert: PrologRiskEngi
                         sx = sy = 1.0
                         draw_polygon = p.polygon
 
-                    draw_lane(draw_frame, draw_polygon, p.lane_detected)
+                    draw_lane(draw_frame, draw_polygon, p.lane_detected,
+                              show_fallback=bool(p.detections))
                     frame_labels: list[tuple[int, int, int, int]] = []
                     for d in sorted(p.detections, key=lambda x: (-LEVEL_PRIORITY[x.risk], x.track_key)):
                         draw_d = _scale_detection(d, sx, sy)
-                        draw_detection(draw_frame, draw_d, frame_labels,
-                                       panel_height(draw_frame.shape[0], draw_frame.shape[1]))
-                    draw_panel(draw_frame, p.level, p.action, len(p.detections), live_fps, math.inf, p.panel_rule_id, p.panel_explanation)
-
-                    # calibration warning
-                    try:
-                        if calibrator is not None and getattr(calibrator, "_uncalibrated", False):
-                            _vs = vis_scale(draw_frame.shape[1], draw_frame.shape[0])
-                            cv2.putText(draw_frame, "WARNING: USING UNCALIBRATED PERSPECTIVE DEFAULTS",
-                                        (int(18 * _vs), draw_frame.shape[0] - int(14 * _vs)),
-                                        cv2.FONT_HERSHEY_SIMPLEX, 0.5 * _vs, (0, 0, 255), max(1, int(2 * _vs)), cv2.LINE_AA)
-                    except Exception:
-                        pass
+                        draw_detection(draw_frame, draw_d, frame_labels, 0)
 
                     # incidents and CSV (only write rows for frames where detections were run)
                     incident_paths: dict[str, str] = {}

@@ -211,6 +211,7 @@ class DataStore:
 
                 # Video resolution (used to normalise box coordinates).
                 w, h = self._video_size(stem, int(_f(summary.get("width"), 1280)), 720)
+                source_fps = self._video_fps(raw_name, 30.0)
                 clean = [r for r in clean if not _is_ego_row(r, w, h)]
                 duration = max((_f(r.get("video_time_s")) for r in clean), default=0.0)
 
@@ -243,6 +244,7 @@ class DataStore:
                     "weather": meta.get("weather", "Unknown"),
                     "duration": mmss(duration),
                     "frames": int(_f(summary.get("frames"))),
+                    "source_fps": source_fps,
                     "total_detections": sum(object_counts.values()),
                     "incidents": int(_f(summary.get("incidents"))) if has_alerting_row else 0,
                     "minimum_ttc_s": None if minimum_ttc is None else round(minimum_ttc, 3),
@@ -303,6 +305,18 @@ class DataStore:
                 except Exception:
                     return default_w, default_h
         return default_w, default_h
+
+    def _video_fps(self, raw_name: str, fallback: float = 30.0) -> float:
+        """Read source cadence, not the pipeline's processing throughput."""
+        try:
+            import cv2  # noqa: PLC0415
+            path = ROOT / "videos" / raw_name
+            cap = cv2.VideoCapture(str(path))
+            fps = float(cap.get(cv2.CAP_PROP_FPS))
+            cap.release()
+            return round(fps, 6) if math.isfinite(fps) and fps > 0 else fallback
+        except Exception:
+            return fallback
 
     def _frame_row(self, r: dict, w: int, h: int) -> dict:
         x1, y1, x2, y2 = (_f(r.get(k)) for k in ("x1", "y1", "x2", "y2"))

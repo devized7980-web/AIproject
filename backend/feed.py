@@ -150,6 +150,7 @@ class LiveFeed:
             base.pop("type", None)
         fps = round(random.uniform(4.2, 5.3), 2)
         latency = round(1000.0 / fps + random.uniform(2, 14), 1)
+        source_fps = float(video.get("source_fps") or 30.0)
 
         detections = []
         counts = {"potholes": 0, "vehicles": 0, "persons": 0, "total": 0}
@@ -215,8 +216,9 @@ class LiveFeed:
             snap["video_id"] = video["id"]
             snap["video_title"] = video["title"]
             snap["frame"] = frame_no
-            snap["video_time"] = frame_no / 30.0
-            snap["duration"] = video["frames"] / 30.0
+            snap["video_time"] = frame_no / source_fps
+            snap["duration"] = video["frames"] / source_fps
+            snap["source_fps"] = source_fps
             snap["fps"] = fps
             snap["latency_ms"] = latency
             snap["state"] = state
