@@ -154,7 +154,9 @@ export default function LiveCommandCenter({ videos }) {
       time: 0,
     };
     if (!frames.length) return empty;
-    const targetFrame = Math.round(curTime * sourceFps) + 1;
+    // Pipeline timestamps are recorded as frame_no / source_fps (frame 1 is
+    // the first displayed frame), so do not add a synthetic frame offset.
+    const targetFrame = Math.max(1, Math.round(curTime * sourceFps));
     let best = frames[0];
     let bd = Infinity;
     for (const f of frames) {

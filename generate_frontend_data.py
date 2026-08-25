@@ -277,9 +277,11 @@ def main() -> None:
         with csv_path.open(newline="", encoding="utf-8") as f:
             rows = list(csv.DictReader(f))
 
-        cap = cv2.VideoCapture(str(src_video))
+        raw_video = ROOT / "videos" / str(raw_name)
+        cap = cv2.VideoCapture(str(raw_video if raw_video.exists() else src_video))
         w = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH)) or 1280
         h = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT)) or 720
+        source_fps = float(cap.get(cv2.CAP_PROP_FPS)) or 30.0
         cap.release()
 
         clean = [r for r in rows if r.get("object", "") in RELEVANT_CLASSES]
@@ -310,6 +312,7 @@ def main() -> None:
             "weather": meta.get("weather", "Unknown"),
             "duration": mmss(duration),
             "frames": summary.get("frames", 0),
+            "source_fps": round(source_fps, 6),
             "total_detections": sum(object_counts.values()),
             "incidents": summary.get("incidents", 0),
             "minimum_ttc_s": summary.get("minimum_ttc_s"),
