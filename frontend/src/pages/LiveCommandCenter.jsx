@@ -28,32 +28,45 @@ function uniqueFrameTracks(rows) {
 }
 
 const labelText = (d) => {
-  const name = String(d.name || "object").replaceAll("_", " ");
-  const conf = Number.isFinite(+d.conf) ? (+d.conf).toFixed(2) : "--";
+  const name = String(d.name || "object").replaceAll("_", " ").toUpperCase();
+  const id = /^\d+$/.test(String(d.track_id || "")) ? ` #${d.track_id}` : "";
+  const conf = Number.isFinite(+d.conf) ? `${Math.round(+d.conf * 100)}%` : "--";
   const distance = Number.isFinite(+d.distance_m) ? `${(+d.distance_m).toFixed(1)}m` : "--";
   const ttc = Number.isFinite(+d.ttc_s) ? `${(+d.ttc_s).toFixed(1)}s` : "--";
-  return { title: `${name} ${conf} | ${distance} | TTC:${ttc} | ${d.risk || "SAFE"}` };
+  const risk = d.risk || "SAFE";
+  const options = [
+    `${name}${id} ${conf} | ${distance} | TTC:${ttc} | ${risk}`,
+    `${name}${id} ${conf} | ${distance} | ${risk}`,
+    `${name}${id} ${conf} | ${risk}`,
+    `${name} ${conf}`,
+  ];
+  const maxChars = Math.max(3, Math.floor(Math.max(1, +d.w || 1) * 1.65));
+  return { title: options.find((text) => text.length <= maxChars) || options[3] };
 };
 
 function placeLabels(rows) {
   const placed = [];
   return rows.map((d) => {
     const label = labelText({ ...d, compact: d.w < 7 });
-    const width = Math.min(58, Math.max(18, label.title.length * 0.52 + 2));
+    const width = Math.min(58, Math.max(8, label.title.length * 0.52 + 2));
     const height = 5.5;
     const x = Math.max(0, Math.min(100 - width, d.x));
-    const candidates = [
-      { left: x, top: Math.max(0, d.y - height - 1) },
-      { left: Math.max(0, Math.min(100 - width, d.x + d.w - width)), top: Math.max(0, d.y - height - 1) },
-      { left: x, top: Math.min(100 - height, d.y + 1) },
-    ];
+    const above = d.y >= height;
+    const candidates = above ? [
+      { left: x, top: d.y - height, inside: false },
+      { left: Math.max(0, Math.min(100 - width, d.x + d.w - width)), top: d.y - height, inside: false },
+      { left: x, top: d.y, inside: true },
+    ] : [{ left: x, top: d.y, inside: true }];
     const overlaps = (a, b) => a.left < b.left + b.width && a.left + width > b.left && a.top < b.top + b.height && a.top + height > b.top;
     let chosen = candidates.find((candidate) => !placed.some((other) => overlaps(candidate, other))) || candidates[0];
     for (let shift = 1; placed.some((other) => overlaps(chosen, other)) && shift < 5; shift += 1) {
       chosen = { ...chosen, left: Math.max(0, Math.min(100 - width, chosen.left + shift * 3)) };
     }
     placed.push({ ...chosen, width, height });
-    return { ...d, label, labelStyle: { left: `${chosen.left - d.x}%`, top: `${chosen.top - d.y}%` } };
+    return { ...d, label, labelStyle: {
+      left: `${chosen.left - d.x}%`,
+      ...(chosen.inside ? { top: "0" } : {}),
+    } };
   });
 }
 

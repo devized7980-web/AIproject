@@ -15,7 +15,7 @@ export const VIDEOS = [
     "total_detections": 1208,
     "incidents": 7,
     "minimum_ttc_s": 0.457,
-    "average_processing_fps": 30.5,
+    "average_processing_fps": 28.59,
     "risk_counts": {
       "SAFE": 1060,
       "WARNING": 27,

@@ -1553,25 +1553,49 @@ def draw_detection(frame: np.ndarray, d: Detection,
     # Keep the reference's crisp two-pixel outline even on small source clips.
     box_thickness = 3
     cv2.rectangle(frame, (d.x1, d.y1), (d.x2, d.y2), color, box_thickness)
-    ttc = "--" if not math.isfinite(d.ttc_s) else f"{d.ttc_s:.1f}s"
+    # Choose a compact variant that fits the final box when possible. Never
+    # truncate the class name: tiny objects fall back to `CLASS CONF%`.
+    name = d.name.replace("_", " ").upper()
+    track_id = d.track_key.rsplit(":", 1)[-1]
+    track_suffix = f" #{track_id}" if track_id.isdigit() else ""
+    confidence = f"{d.confidence:.0%}"
     distance = "--" if not math.isfinite(d.distance_m) else f"{d.distance_m:.1f}m"
-    label = f"{d.name.replace('_', ' ')} {d.confidence:.2f} | {distance} | TTC:{ttc} | {d.risk}"
-    font, scale, thickness = cv2.FONT_HERSHEY_SIMPLEX, 0.52 * vs, max(1, int(round(2 * vs)))
+    ttc = "--" if not math.isfinite(d.ttc_s) else f"{d.ttc_s:.1f}s"
+    font, scale, thickness = cv2.FONT_HERSHEY_SIMPLEX, 0.45 * vs, max(1, int(round(1.5 * vs)))
+    pad_x = max(3, int(3 * vs))
+    pad_y = max(2, int(2 * vs))
+    max_text_w = max(1, d.x2 - d.x1 - pad_x * 2)
+    label_options = [
+        f"{name}{track_suffix} {confidence} | {distance} | TTC:{ttc} | {d.risk}",
+        f"{name}{track_suffix} {confidence} | {distance} | {d.risk}",
+        f"{name}{track_suffix} {confidence} | {d.risk}",
+        f"{name} {confidence}",
+    ]
+    label = next(
+        (text for text in label_options
+         if cv2.getTextSize(text, font, scale, thickness)[0][0] <= max_text_w),
+        label_options[-1],
+    )
     (tw, th), baseline = cv2.getTextSize(label, font, scale, thickness)
-    pad = max(3, int(4 * vs))
-    label_w, label_h = tw + pad * 2, th + baseline + pad * 2
+    label_w, label_h = tw + pad_x * 2, th + baseline + pad_y * 2
 
     def candidate(x: int, y: int) -> tuple[int, int, int, int]:
         x = max(0, min(x, w - label_w))
         y = max(top_margin, min(y, h - label_h))
         return (x, y, x + label_w, y + label_h)
 
-    gap = max(2, int(3 * vs))
-    candidates = [
-        candidate(d.x1, d.y1 - label_h - gap),
-        candidate(d.x2 - label_w, d.y1 - label_h - gap),
-        candidate(d.x1, d.y1 + pad),
-    ]
+    if d.y1 >= top_margin + label_h:
+        candidates = [
+            candidate(d.x1, d.y1 - label_h),
+            candidate(d.x2 - label_w, d.y1 - label_h),
+            candidate(d.x1, d.y1),
+        ]
+    else:
+        # No room above: attach the plate to the inside of the final box.
+        candidates = [
+            candidate(d.x1, d.y1),
+            candidate(d.x2 - label_w, d.y1),
+        ]
     chosen = candidates[0]
     if placed_labels is not None:
         for option in candidates:
@@ -1585,7 +1609,9 @@ def draw_detection(frame: np.ndarray, d: Detection,
     if plate.size:
         dark = np.zeros_like(plate)
         cv2.addWeighted(dark, 0.65, plate, 0.35, 0, plate)
-    cv2.putText(frame, label, (lx + pad, ly + label_h - pad - baseline),
+    cv2.rectangle(frame, (lx, ly), (lx + label_w - 1, ly + label_h - 1),
+                  color, 1, cv2.LINE_AA)
+    cv2.putText(frame, label, (lx + pad_x, ly + label_h - pad_y - baseline),
                 font, scale, color, thickness, cv2.LINE_AA)
 
 
