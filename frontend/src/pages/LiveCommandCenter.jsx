@@ -115,6 +115,8 @@ export default function LiveCommandCenter({ videos }) {
   const [frames, setFrames] = useState([]);
   const [curTime, setCurTime] = useState(0);
   const [stageRatio, setStageRatio] = useState(null);
+  const [videoReady, setVideoReady] = useState(false);
+  const [videoError, setVideoError] = useState(false);
   const sourceFps = Number(video?.source_fps) > 0 ? Number(video.source_fps) : 30;
 
   useEffect(() => {
@@ -125,6 +127,8 @@ export default function LiveCommandCenter({ videos }) {
     let on = true;
     setFrames([]);
     setCurTime(0);
+    setVideoReady(false);
+    setVideoError(false);
     if (!video?.id) return () => { on = false; };
     getVideoFrames(video.id).then((d) => {
       const list = (d && Array.isArray(d.frames) ? d.frames : [])
@@ -254,10 +258,13 @@ export default function LiveCommandCenter({ videos }) {
                 muted playsInline loop autoPlay
                 onLoadedMetadata={(e) => {
                   const v = e.currentTarget;
-                 if (v.videoWidth && v.videoHeight) setStageRatio(v.videoWidth / v.videoHeight);
+                  setVideoReady(true);
+                  if (v.videoWidth && v.videoHeight) setStageRatio(v.videoWidth / v.videoHeight);
                 }}
+                onError={() => { setVideoReady(false); setVideoError(true); }}
               />
-              {showOverlay && (video?.raw || RAW[video?.id]) && overlayRows.map((d, i) => (
+              {videoError && <div className="sw-empty"><div>Raw video unavailable</div><small>Backend offline or the original clip could not be decoded.</small></div>}
+              {videoReady && showOverlay && (video?.raw || RAW[video?.id]) && overlayRows.map((d, i) => (
                 <span
                   key={`${d.track_id || d.name}-${d.frame || i}`}
                   className="sw-dbox"
@@ -273,7 +280,7 @@ export default function LiveCommandCenter({ videos }) {
                   </em>
                 </span>
               ))}
-              {showOverlay && <div className="sw-hud">
+              {videoReady && showOverlay && <div className="sw-hud">
                 <div className="who" style={{ color: levelColor(synced.state.level) }}>
                   {synced.state.level} — {synced.state.action}
                 </div>
