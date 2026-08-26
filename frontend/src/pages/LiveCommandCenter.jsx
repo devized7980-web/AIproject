@@ -263,7 +263,7 @@ export default function LiveCommandCenter({ videos }) {
                 }}
                 onError={() => { setVideoReady(false); setVideoError(true); }}
               />
-              {videoError && <div className="sw-empty"><div>Raw video unavailable</div><small>Backend offline or the original clip could not be decoded.</small></div>}
+              {(videoError || !(video?.raw || RAW[video?.id])) && <div className="sw-empty"><div>Raw video unavailable</div><small>Backend offline or the original clip could not be decoded.</small></div>}
               {videoReady && showOverlay && (video?.raw || RAW[video?.id]) && overlayRows.map((d, i) => (
                 <span
                   key={`${d.track_id || d.name}-${d.frame || i}`}
