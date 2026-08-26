@@ -105,6 +105,11 @@ const RAW = {
   video_1: "road_video_1.mp4.MP4",
   video_2: "road_video_2.mp4.MP4",
   video_3: "road_video_3.mp4.mp4",
+  video_4: "road_video_4.mp4",
+  video_5: "road_video_5.mp4",
+  video_6: "road_video_6.mp4",
+  video_7: "road_video_7.mp4",
+  video_8: "road_video_8.mp4",
 };
 
 function synthesizeFrames(videoId) {

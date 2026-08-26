@@ -307,6 +307,7 @@ def main() -> None:
             "id": f"video_{len(videos) + 1}",
             "title": meta.get("title", stem.replace("_", " ").title()),
             "file": dest_name,
+            "raw": str(raw_name),
             "thumb": thumb_name,
             "location": meta.get("location", "Untagged route"),
             "weather": meta.get("weather", "Unknown"),

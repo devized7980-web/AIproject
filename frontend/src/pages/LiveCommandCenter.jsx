@@ -3,7 +3,7 @@ import {
   Activity, RadioTower, Gauge, Timer, Zap, Car, Users, Cone, BellRing,
   ChevronRight, ShieldAlert,
 } from "lucide-react";
-import { getVideoFrames } from "../api.js";
+import { getVideoFrames, RAW } from "../api.js";
 import { VIDEOS } from "../data.js";
 import { useLiveFeed } from "../useLive.js";
 import { playAlertSound } from "../sound.js";
@@ -250,14 +250,14 @@ export default function LiveCommandCenter({ videos }) {
               <video
                 ref={videoRef}
                 key={video?.id}
-                src={video?.raw ? `/raw/${video.raw}` : `/videos/${video?.file}`}
+                src={video?.raw || RAW[video?.id] ? `/raw/${video.raw || RAW[video.id]}` : ""}
                 muted playsInline loop autoPlay
                 onLoadedMetadata={(e) => {
                   const v = e.currentTarget;
                  if (v.videoWidth && v.videoHeight) setStageRatio(v.videoWidth / v.videoHeight);
                 }}
               />
-              {showOverlay && video?.raw && overlayRows.map((d, i) => (
+              {showOverlay && (video?.raw || RAW[video?.id]) && overlayRows.map((d, i) => (
                 <span
                   key={`${d.track_id || d.name}-${d.frame || i}`}
                   className="sw-dbox"
@@ -273,7 +273,7 @@ export default function LiveCommandCenter({ videos }) {
                   </em>
                 </span>
               ))}
-              <div className="sw-hud">
+              {showOverlay && <div className="sw-hud">
                 <div className="who" style={{ color: levelColor(synced.state.level) }}>
                   {synced.state.level} — {synced.state.action}
                 </div>
@@ -281,7 +281,7 @@ export default function LiveCommandCenter({ videos }) {
                   {String(video?.title || video?.id || "").split("—")[0]} · {synced.frame != null ? `f${synced.frame}` : "…"} {mmss(synced.time)}
                 </div>
                 <div className="time" data-level={synced.state.level}>{feed ? `${Number.isFinite(+feed.fps) ? (+feed.fps).toFixed(1) : "—"} fps · ${Number.isFinite(+feed.latency_ms) ? (+feed.latency_ms).toFixed(0) : "—"} ms` : "—"}</div>
-              </div>
+              </div>}
             </div>
           </Panel>
 

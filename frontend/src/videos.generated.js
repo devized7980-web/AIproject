@@ -4,6 +4,7 @@
 export const VIDEOS = [
   {
     "id": "video_1",
+    "raw": "road_video_1.mp4.MP4",
     "title": "Urban Traffic and Pedestrian Hazard Detection",
     "file": "road_video_1.mp4_processed.mp4",
     "thumb": "road_video_1.mp4_thumb.jpg",
@@ -134,6 +135,7 @@ export const VIDEOS = [
   },
   {
     "id": "video_2",
+    "raw": "road_video_2.mp4.MP4",
     "title": "Multi-Vehicle Collision Risk and Safety Analysis",
     "file": "road_video_2.mp4_processed.mp4",
     "thumb": "road_video_2.mp4_thumb.jpg",
@@ -406,6 +408,7 @@ export const VIDEOS = [
   },
   {
     "id": "video_3",
+    "raw": "road_video_3.mp4.mp4",
     "title": "Pothole and Road-Surface Hazard Detection",
     "file": "road_video_3.mp4_processed.mp4",
     "thumb": "road_video_3.mp4_thumb.jpg",
@@ -632,6 +635,7 @@ export const VIDEOS = [
   },
   {
     "id": "video_4",
+    "raw": "road_video_4.mp4",
     "title": "Road Video 4",
     "file": "road_video_4_processed.mp4",
     "thumb": "road_video_4_thumb.jpg",
@@ -763,6 +767,7 @@ export const VIDEOS = [
   },
   {
     "id": "video_5",
+    "raw": "road_video_5.mp4",
     "title": "Road Video 5",
     "file": "road_video_5_processed.mp4",
     "thumb": "road_video_5_thumb.jpg",
@@ -995,6 +1000,7 @@ export const VIDEOS = [
   },
   {
     "id": "video_6",
+    "raw": "road_video_6.mp4",
     "title": "Road Video 6",
     "file": "road_video_6_processed.mp4",
     "thumb": "road_video_6_thumb.jpg",
@@ -1186,6 +1192,7 @@ export const VIDEOS = [
   },
   {
     "id": "video_7",
+    "raw": "road_video_7.mp4",
     "title": "Road Video 7",
     "file": "road_video_7_processed.mp4",
     "thumb": "road_video_7_thumb.jpg",
@@ -1394,6 +1401,7 @@ export const VIDEOS = [
   },
   {
     "id": "video_8",
+    "raw": "road_video_8.mp4",
     "title": "Road Video 8",
     "file": "road_video_8_processed.mp4",
     "thumb": "road_video_8_thumb.jpg",

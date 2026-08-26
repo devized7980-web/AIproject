@@ -239,7 +239,9 @@ class DataStore:
                     "id": vid,
                     "title": meta.get("title", stem.replace("_", " ").title()),
                     "file": f"{stem}_processed.mp4",
-                    "raw": meta.get("raw", ""),
+                    # Live overlays must use the original camera clip, never the
+                    # annotated advanced output used by replay/gallery views.
+                    "raw": meta.get("raw", raw_name),
                     "thumb": f"{stem}_thumb.jpg",
                     "location": meta.get("location", "Untagged route"),
                     "weather": meta.get("weather", "Unknown"),
