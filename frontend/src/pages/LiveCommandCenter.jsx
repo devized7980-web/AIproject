@@ -28,26 +28,16 @@ function uniqueFrameTracks(rows) {
 }
 
 const labelText = (d) => {
-  const name = String(d.name || "object").replaceAll("_", " ").toUpperCase();
-  const id = /^\d+$/.test(String(d.track_id || "")) ? ` #${d.track_id}` : "";
+  const name = String(d.name || d.object || "object").replaceAll("_", " ").toUpperCase();
   const conf = Number.isFinite(+d.conf) ? `${Math.round(+d.conf * 100)}%` : "--";
-  const distance = Number.isFinite(+d.distance_m) ? `${(+d.distance_m).toFixed(1)}m` : "--";
   const ttc = Number.isFinite(+d.ttc_s) ? `${(+d.ttc_s).toFixed(1)}s` : "--";
-  const risk = d.risk || "SAFE";
-  const options = [
-    `${name}${id} ${conf} | ${distance} | TTC:${ttc} | ${risk}`,
-    `${name}${id} ${conf} | ${distance} | ${risk}`,
-    `${name}${id} ${conf} | ${risk}`,
-    `${name} ${conf}`,
-  ];
-  const maxChars = Math.max(3, Math.floor(Math.max(1, +d.w || 1) * 1.65));
-  return { title: options.find((text) => text.length <= maxChars) || options[3] };
+  return { title: `${name} ${conf} | TTC:${ttc}` };
 };
 
 function placeLabels(rows) {
   const placed = [];
   return rows.map((d) => {
-    const label = labelText({ ...d, compact: d.w < 7 });
+    const label = labelText(d);
     const width = Math.min(58, Math.max(8, label.title.length * 0.52 + 2));
     const height = 5.5;
     const x = Math.max(0, Math.min(100 - width, d.x));

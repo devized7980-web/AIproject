@@ -6,6 +6,7 @@ import unittest
 import numpy as np
 
 spec = importlib.util.spec_from_file_location("main", os.path.join(os.path.dirname(__file__), "..", "main.py"))
+assert spec is not None
 main = importlib.util.module_from_spec(spec)
 sys.modules["main"] = main
 spec.loader.exec_module(main)  # type: ignore
@@ -56,7 +57,7 @@ class FakeWriter:
 class BoxesTests(unittest.TestCase):
     def setUp(self):
         self.tmpdir = tempfile.TemporaryDirectory()
-        main.OUTPUT_FOLDER = main.Path(self.tmpdir.name)
+        setattr(main, "OUTPUT_FOLDER", main.Path(self.tmpdir.name))
 
     def tearDown(self):
         self.tmpdir.cleanup()

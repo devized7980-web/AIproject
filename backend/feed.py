@@ -16,7 +16,7 @@ import time
 from collections import defaultdict
 from typing import Any
 
-from .data import DataStore, LEVEL_PRIORITY, LEVELS
+from .data import DataStore, LEVEL_PRIORITY
 
 TICK_S = 0.21  # ~4.8 fps, matching the real pipeline's ~4.5 fps
 
@@ -130,6 +130,9 @@ class LiveFeed:
         while not self._stop.is_set():
             with self.lock:
                 video_id = self.video_id
+            if video_id is None:
+                time.sleep(TICK_S)
+                continue
             video = next((v for v in self.store.videos if v["id"] == video_id), None)
             if video is None:
                 time.sleep(TICK_S)

@@ -2,10 +2,10 @@ import importlib.util
 import os
 import sys
 import unittest
-import math
 
 # Load main module
 spec = importlib.util.spec_from_file_location("main", os.path.join(os.path.dirname(__file__), "..", "main.py"))
+assert spec is not None
 main = importlib.util.module_from_spec(spec)
 sys.modules["main"] = main
 spec.loader.exec_module(main)  # type: ignore

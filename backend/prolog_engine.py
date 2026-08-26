@@ -13,7 +13,7 @@ from pathlib import Path
 try:
     from pyswip import Prolog
 except Exception:  # pragma: no cover - environment dependent
-    Prolog = None
+    Prolog = None  # type: ignore[misc, assignment]
 
 ROOT = Path(__file__).resolve().parent.parent
 PROLOG_FILE = ROOT / "expert_system.pl"
@@ -202,6 +202,7 @@ class PrologEngine:
             level, action = self._table(d)
             rule = next(r for r in RULES if r["level"] == level and r["action"] == action)
 
+        level, action = self._table(d)
         ttc = d.get("ttc_s")
         return {
             "object": d.get("object", "object"),

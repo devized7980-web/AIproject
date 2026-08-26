@@ -7,6 +7,7 @@ import unittest
 
 # Load main module directly
 spec = importlib.util.spec_from_file_location("main", os.path.join(os.path.dirname(__file__), "..", "main.py"))
+assert spec is not None
 main = importlib.util.module_from_spec(spec)
 sys.modules["main"] = main
 spec.loader.exec_module(main)  # type: ignore
@@ -72,7 +73,7 @@ class PrologTests(unittest.TestCase):
 
     def test_successful_prolog_decision(self):
         mock = MockProlog({"decision": [{"Level": "warning", "Action": "slow_down", "RuleID": "vehicle_following_distance", "Explanation": "Reduce speed and increase following distance."}]})
-        main.Prolog = lambda: None  # placeholder class
+        setattr(main, "Prolog", lambda: None)  # placeholder class
         engine = main.PrologRiskEngine.__new__(main.PrologRiskEngine)
         engine.available = True
         engine.prolog = mock
@@ -88,7 +89,7 @@ class PrologTests(unittest.TestCase):
 
     def test_query_returns_no_result(self):
         mock = MockProlog({"decision": []})
-        main.Prolog = lambda: None
+        setattr(main, "Prolog", lambda: None)
         engine = main.PrologRiskEngine.__new__(main.PrologRiskEngine)
         engine.available = True
         engine.prolog = mock
@@ -102,7 +103,7 @@ class PrologTests(unittest.TestCase):
 
     def test_assertion_failure(self):
         mock = MockProlog({"assertz": RuntimeError("assert fail")})
-        main.Prolog = lambda: None
+        setattr(main, "Prolog", lambda: None)
         engine = main.PrologRiskEngine.__new__(main.PrologRiskEngine)
         engine.available = True
         engine.prolog = mock
@@ -115,7 +116,7 @@ class PrologTests(unittest.TestCase):
 
     def test_decision_query_failure(self):
         mock = MockProlog({"decision": RuntimeError("query fail")})
-        main.Prolog = lambda: None
+        setattr(main, "Prolog", lambda: None)
         engine = main.PrologRiskEngine.__new__(main.PrologRiskEngine)
         engine.available = True
         engine.prolog = mock
@@ -128,7 +129,7 @@ class PrologTests(unittest.TestCase):
 
     def test_cleanup_failure_logged(self):
         mock = MockProlog({"decision": [{"Level": "warning", "Action": "ok", "RuleID": "test_rule", "Explanation": "ok"}]}, simulate_cleanup_failure=True)
-        main.Prolog = lambda: None
+        setattr(main, "Prolog", lambda: None)
         engine = main.PrologRiskEngine.__new__(main.PrologRiskEngine)
         engine.available = True
         engine.prolog = mock
@@ -144,7 +145,7 @@ class PrologTests(unittest.TestCase):
     def test_concurrent_calls_are_serialized(self):
         # MockProlog will raise if assertz is called concurrently
         mock = MockProlog({"decision": [{"Level": "warning", "Action": "ok", "RuleID": "test_rule", "Explanation": "ok"}]})
-        main.Prolog = lambda: None
+        setattr(main, "Prolog", lambda: None)
         engine = main.PrologRiskEngine.__new__(main.PrologRiskEngine)
         engine.available = True
         engine.prolog = mock
@@ -172,7 +173,7 @@ class PrologTests(unittest.TestCase):
 
     def test_fallback_when_prolog_unavailable(self):
         # Ensure that fallback is used when Prolog is not available
-        main.Prolog = None
+        setattr(main, "Prolog", None)
         engine = main.PrologRiskEngine.__new__(main.PrologRiskEngine)
         engine.available = False
         engine.prolog = None

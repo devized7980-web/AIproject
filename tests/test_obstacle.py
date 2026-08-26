@@ -2,15 +2,17 @@ import importlib.util
 import os
 import sys
 import unittest
+from typing import Any
 
 spec = importlib.util.spec_from_file_location("main", os.path.join(os.path.dirname(__file__), "..", "main.py"))
+assert spec is not None
 main = importlib.util.module_from_spec(spec)
 sys.modules["main"] = main
 spec.loader.exec_module(main)  # type: ignore
 
 
 def make_detection(name: str, distance: float, ttc: float, box_ratio: float,
-                    in_lane: bool = True, confidence: float = 0.9) -> "main.Detection":
+                     in_lane: bool = True, confidence: float = 0.9) -> Any:
     return main.Detection(
         name=name,
         confidence=confidence,

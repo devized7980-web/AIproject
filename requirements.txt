@@ -5,3 +5,4 @@ pyswip
 pyttsx3
 pytest
 pytest-cov
+imageio-ffmpeg

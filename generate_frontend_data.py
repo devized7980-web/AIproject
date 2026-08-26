@@ -21,7 +21,7 @@ import cv2
 try:
     import imageio_ffmpeg
 except ImportError:
-    imageio_ffmpeg = None
+    imageio_ffmpeg = None  # type: ignore[assignment]
 
 ROOT = Path(__file__).resolve().parent
 OUTPUT = ROOT / "output"

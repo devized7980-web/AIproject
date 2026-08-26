@@ -4,8 +4,6 @@ import argparse
 import csv
 import json
 import math
-import os
-import platform
 import re
 import threading
 import queue
@@ -13,7 +11,7 @@ import time
 from collections import Counter, defaultdict, deque
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any
+from typing import Any, TypeAlias
 
 import cv2
 import numpy as np
@@ -22,12 +20,12 @@ from ultralytics import YOLO
 try:
     from pyswip import Prolog
 except Exception:
-    Prolog = None  # type: ignore[assignment]
+    Prolog: Any = None
 
 try:
     import pyttsx3
 except Exception:
-    pyttsx3 = None  # type: ignore[assignment]
+    pyttsx3: Any = None
 
 
 ROOT = Path(__file__).resolve().parent
@@ -181,6 +179,8 @@ RULE_PRIORITIES = {
     "object_outside_vehicle_lane": 25,
     "object_at_safe_distance": 20,
 }
+
+Decision: TypeAlias = tuple[str, str, str, str, str]
 
 
 @dataclass
@@ -462,7 +462,7 @@ class PrologRiskEngine:
                 continue
         trace.sort(key=lambda r: r["priority"], reverse=True)
         return trace
-    def decide(self, d: Detection) -> tuple[str, str]:
+    def decide(self, d: Detection) -> Decision:
         # New interface: return (risk, action_display, rule_id, explanation, decision_source)
         if not self.available:
             return fallback_decision(d)
@@ -545,7 +545,7 @@ class PrologRiskEngine:
             return fallback_decision(d)
 
 
-def fallback_decision(d: Detection) -> tuple[str, str]:
+def fallback_decision(d: Detection) -> Decision:
     result = _fallback_decision_rules(d)
     # Record the priority of the rule that matched so the dashboard's decision
     # trace works identically on the fallback path. Python's fallback is
@@ -565,7 +565,7 @@ def fallback_decision(d: Detection) -> tuple[str, str]:
     return result
 
 
-def _fallback_decision_rules(d: Detection) -> tuple[str, str]:
+def _fallback_decision_rules(d: Detection) -> Decision:
     name = d.name.lower()
     # Return structured decision fields: (risk, action_display, rule_id, explanation, decision_source)
     if not d.in_lane:
@@ -673,6 +673,7 @@ class PerspectiveDistanceCalibrator:
             self.horizon_y = int(horizon_y)
             self._uncalibrated = False
         else:
+            assert horizon_ratio is not None
             if not (0.0 <= horizon_ratio <= 1.0):
                 raise ValueError("horizon_ratio must be between 0 and 1")
             self.horizon_y = int(self.image_height * horizon_ratio)
@@ -737,7 +738,6 @@ class PerspectiveDistanceCalibrator:
 
     def distance(self, track_key: str, box: tuple[int, int, int, int], name: str | None = None) -> tuple[float, str]:
         x1, y1, x2, y2 = box
-        bottom_x = (x1 + x2) / 2.0
         bottom_y = float(y2)
 
         method = "unknown"
@@ -800,7 +800,7 @@ def detect_lane_polygon(frame: np.ndarray) -> tuple[np.ndarray, bool]:
         (int(w * 0.06), h - 1), (int(w * 0.42), int(h * 0.55)),
         (int(w * 0.58), int(h * 0.55)), (int(w * 0.94), h - 1)
     ]], dtype=np.int32)
-    cv2.fillPoly(mask, roi, 255)
+    cv2.fillPoly(mask, [roi], 255)
     cropped = cv2.bitwise_and(edges, mask)
     lines = cv2.HoughLinesP(cropped, 1, np.pi / 180, threshold=45,
                             minLineLength=max(35, w // 18), maxLineGap=max(40, w // 14))
@@ -866,7 +866,8 @@ def detect_lane_polygon(frame: np.ndarray) -> tuple[np.ndarray, bool]:
     if not (w * 0.15 <= bottom_width <= w * 1.6):
         return default_lane_polygon(w, h), False
 
-    clamp_x = lambda x: int(np.clip(x, -w, 2 * w))
+    def clamp_x(x: float) -> int:
+        return int(np.clip(x, -w, 2 * w))
     polygon = np.array([
         [clamp_x(lx_top), y_top], [clamp_x(rx_top), y_top],
         [clamp_x(rx_bottom), y_bottom], [clamp_x(lx_bottom), y_bottom],
@@ -1087,7 +1088,7 @@ class DetectionSmoother:
 
             try:
                 st = self._filters[key].state()
-                cx, cy, w_px, h_px = meas_cx, meas_cy, meas_w, meas_h
+                w_px, h_px = meas_w, meas_h
                 # Reject a filtered box whose size has run away from the
                 # measurement rather than drawing an implausible rectangle.
                 if not (0.5 <= w_px / meas_w <= 2.0 and 0.5 <= h_px / meas_h <= 2.0):
@@ -1391,16 +1392,17 @@ def extract(model: YOLO, frame: np.ndarray, source: str, polygon: np.ndarray, st
         infer_kwargs["device"] = INFERENCE_DEVICE
     # Raw post-NMS predictions are required here: the ego ROI must be applied
     # before any tracker can assign an ID or retain state for the hood.
-    results = model.predict(frame, **infer_kwargs) if hasattr(model, "predict") else model.track(
+    results: Any = model.predict(frame, **infer_kwargs) if hasattr(model, "predict") else model.track(
         frame, persist=True, tracker=TRACKER, **infer_kwargs
     )
     output: list[Detection] = []
     # common model class whitelist
     COMMON_FILTER = {"person","bicycle","car","motorcycle","bus","truck","traffic light","stop sign","dog","cat","horse","cow","sheep"}
     for result in results:
-        if result.boxes is None:
+        boxes = getattr(result, "boxes", None)
+        if boxes is None:
             continue
-        for box in result.boxes:
+        for box in boxes:
             cls_id = int(box.cls[0].item())
             name = str(model.names[cls_id]).strip().lower()
             # filter common model to road-relevant classes
@@ -1786,7 +1788,6 @@ def create_dashboard(video_name: str, stats: RunStats, elapsed: float, output_pa
     )
     # Prolog reasoning summary
     top_rules = stats.triggered_rules.most_common(10)
-    rule_rows = "".join(f"<tr><td>{rid}</td><td>{cnt}</td><td>{(stats.triggered_rules[rid] and '')}</td></tr>" for rid, cnt in top_rules) or "<tr><td>None</td><td>0</td><td></td></tr>"
     prolog_counts = " | ".join(f"{k}: {v}" for k, v in stats.decision_source_counts.items())
     html = f"""<!doctype html><html><head><meta charset='utf-8'><title>Road Safety Report</title>
 <style>body{{font-family:Arial;background:#10141b;color:#eee;margin:0;padding:28px}}h1{{margin-top:0}}.grid{{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:14px}}.card{{background:#1d2530;border-radius:12px;padding:16px}}.card p{{font-size:28px;font-weight:bold;margin:8px 0}}table{{width:100%;border-collapse:collapse;background:#1d2530}}th,td{{padding:10px;border-bottom:1px solid #394555;text-align:left}}.note{{color:#b9c5d3}}
@@ -1866,11 +1867,12 @@ def process_video(path: Path, common: YOLO, custom: YOLO, expert: PrologRiskEngi
     # Fall back to mp4v only if this build cannot open an H.264 writer.
     # The output video always uses the source resolution; frames are upscaled
     # back from the processing resolution before drawing overlays.
-    writer = cv2.VideoWriter(str(video_out), cv2.VideoWriter_fourcc(*"avc1"), source_fps, (source_w, source_h))
+    fourcc = getattr(cv2, "VideoWriter_fourcc")
+    writer = cv2.VideoWriter(str(video_out), fourcc(*"avc1"), source_fps, (source_w, source_h))
     # getattr keeps this tolerant of writer stand-ins that don't implement isOpened
     if not getattr(writer, "isOpened", lambda: True)():
         print("H.264 writer unavailable; falling back to mp4v")
-        writer = cv2.VideoWriter(str(video_out), cv2.VideoWriter_fourcc(*"mp4v"), source_fps, (source_w, source_h))
+        writer = cv2.VideoWriter(str(video_out), fourcc(*"mp4v"), source_fps, (source_w, source_h))
 
     # Pipeline items
     @dataclass
@@ -1905,7 +1907,6 @@ def process_video(path: Path, common: YOLO, custom: YOLO, expert: PrologRiskEngi
     last_incident: dict[str, float] = {}
     stats = RunStats()
     smoother = DetectionSmoother()
-    previous_lane: np.ndarray | None = None
     methods_used: set[str] = set()
 
     # calibration
@@ -1935,7 +1936,7 @@ def process_video(path: Path, common: YOLO, custom: YOLO, expert: PrologRiskEngi
     _pipeline_lock = threading.Lock()
 
     # stats for pipeline
-    pipeline_stats = {
+    pipeline_stats: dict[str, Any] = {
         "max_read_q": 0,
         "max_result_q": 0,
         "read_put_times": [],
@@ -1995,7 +1996,6 @@ def process_video(path: Path, common: YOLO, custom: YOLO, expert: PrologRiskEngi
     def worker():
         try:
             # cached detections for frames without fresh detection
-            cached_detections: list[Detection] = []
             lane_tracker = LaneTracker(w, h)
             while not stop_event.is_set():
                 item = read_q.get()
@@ -2006,6 +2006,9 @@ def process_video(path: Path, common: YOLO, custom: YOLO, expert: PrologRiskEngi
                     except Exception:
                         pass
                     break
+
+                if not isinstance(item, FrameItem):
+                    continue
 
                 start_inf = time.perf_counter()
                 frame_no = item.frame_no
@@ -2168,11 +2171,9 @@ def process_video(path: Path, common: YOLO, custom: YOLO, expert: PrologRiskEngi
 
                 level = "SAFE"
                 action = "ROAD CLEAR - CONTINUE CAREFULLY"
-                min_ttc = math.inf
                 if highest is not None:
                     level = highest.risk
                     action = highest.action
-                    min_ttc = highest.ttc_s
                     if fresh_detection and level in {"WARNING", "CRITICAL"}:
                         voice.speak(f"{highest.name}:{level}", action)
 
@@ -2342,6 +2343,9 @@ def process_video(path: Path, common: YOLO, custom: YOLO, expert: PrologRiskEngi
                             break
                         if key == ord(" "):
                             cv2.waitKey(0)
+                    continue
+
+                if not isinstance(item, ProcessedItem):
                     continue
 
                 # buffer the item

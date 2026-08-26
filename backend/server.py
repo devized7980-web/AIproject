@@ -27,17 +27,18 @@ import math
 import random
 from pathlib import Path
 from typing import Any
+from typing import MutableMapping
 
 from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse, JSONResponse
+from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from starlette.exceptions import HTTPException as StarletteHTTPException
 from pydantic import BaseModel, Field
 
 from . import benchmark as bench_mod
-from .data import DataStore, LEVEL_PRIORITY, LEVELS, STORE
-from .feed import Broadcaster, LiveFeed, build_feed
+from .data import LEVEL_PRIORITY, LEVELS, STORE
+from .feed import Broadcaster, build_feed
 from .prolog_engine import ENGINE
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -62,7 +63,7 @@ alert_state: dict[str, dict] = {}
 class SPAStaticFiles(StaticFiles):
     """Serve the app shell for client-side page refreshes, not API paths."""
 
-    async def get_response(self, path: str, scope: dict) -> Any:
+    async def get_response(self, path: str, scope: MutableMapping[str, Any]) -> Any:
         try:
             return await super().get_response(path, scope)
         except StarletteHTTPException as exc:

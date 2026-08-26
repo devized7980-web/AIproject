@@ -1,6 +1,4 @@
 import time
-import threading
-import types
 import unittest
 
 import importlib.util

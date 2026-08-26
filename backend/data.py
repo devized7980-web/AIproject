@@ -8,6 +8,7 @@ import json
 import math
 from collections import defaultdict
 from pathlib import Path
+from typing import SupportsFloat
 
 ROOT = Path(__file__).resolve().parent.parent
 OUTPUT = ROOT / "output"
@@ -62,7 +63,7 @@ def mmss(seconds: float) -> str:
 
 def _f(value: object, default: float = 0.0) -> float:
     try:
-        return float(value)
+        return float(value) if isinstance(value, (str, bytes, bytearray, SupportsFloat)) else default
     except (TypeError, ValueError):
         return default
 
@@ -71,7 +72,7 @@ def _maybe_float(value: object) -> float | None:
     if value in ("", None):
         return None
     try:
-        return round(float(value), 3)
+        return round(float(value), 3) if isinstance(value, (str, bytes, bytearray, SupportsFloat)) else None
     except (TypeError, ValueError):
         return None
 
