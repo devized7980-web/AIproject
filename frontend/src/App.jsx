@@ -1,17 +1,15 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
 import {
-  LayoutDashboard, Video, BarChart3, BrainCircuit, SlidersHorizontal,
-  BellRing, Gauge, Settings, Shield, Cpu, Menu, X, Wifi, WifiOff,
+  LayoutDashboard, Video, BarChart3, SlidersHorizontal,
+  BellRing, Settings, Shield, Cpu, Menu, X, Wifi, WifiOff,
 } from "lucide-react";
 import { getVideos, backendUp } from "./api.js";
 import { useSettings } from "./settings.js";
 import LiveCommandCenter from "./pages/LiveCommandCenter.jsx";
 import IncidentReplay from "./pages/IncidentReplay.jsx";
 import Analytics from "./pages/Analytics.jsx";
-import AIExplainer from "./pages/AIExplainer.jsx";
 import WhatIfSimulator from "./pages/WhatIfSimulator.jsx";
 import AlertCenter from "./pages/AlertCenter.jsx";
-import PerformanceLab from "./pages/PerformanceLab.jsx";
 import SettingsPage from "./pages/Settings.jsx";
 import Videos from "./pages/Videos.jsx";
 
@@ -23,10 +21,8 @@ const NAV = [
   { id: "command", label: "Live Command Center", icon: LayoutDashboard },
   { id: "replay", label: "Incident Replay", icon: Video },
   { id: "analytics", label: "Safety Analytics", icon: BarChart3 },
-  { id: "explainer", label: "AI Explainer", icon: BrainCircuit },
   { id: "simulator", label: "What-If Simulator", icon: SlidersHorizontal },
   { id: "alerts", label: "Alert Center", icon: BellRing },
-  { id: "performance", label: "Model Performance Lab", icon: Gauge },
   { id: "settings", label: "System Settings", icon: Settings },
 ];
 
@@ -157,10 +153,8 @@ export default function App() {
                {page === "command" && <LiveCommandCenter videos={videos} />}
                {page === "replay" && <IncidentReplay videos={videos} />}
                {page === "analytics" && <Analytics videos={videos} />}
-               {page === "explainer" && <AIExplainer videos={videos} />}
-               {page === "simulator" && <WhatIfSimulator videos={videos} />}
-               {page === "alerts" && <AlertCenter videos={videos} />}
-               {page === "performance" && <PerformanceLab videos={videos} />}
+                {page === "simulator" && <WhatIfSimulator videos={videos} />}
+                {page === "alerts" && <AlertCenter videos={videos} />}
                {page === "settings" && <SettingsPage />}
              </SafetyErrorBoundary>
            </main>
