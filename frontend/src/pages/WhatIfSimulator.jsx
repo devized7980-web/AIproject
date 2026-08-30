@@ -2,7 +2,6 @@ import React, { useEffect, useState } from "react";
 import { SlidersHorizontal, Zap, Droplets, Eye, Car, ArrowRight } from "lucide-react";
 import { simulate } from "../api.js";
 import { Panel, ScoreGauge, Range, Tag, levelColor, fmtTtc } from "../ui.jsx";
-import { useSettingsCtx } from "../App.jsx";
 
 const OBJECTS = ["pothole", "person", "car", "truck", "bus", "bicycle", "alligator cracking", "traffic light"];
 
@@ -15,7 +14,6 @@ const PRESETS = [
 ];
 
 export default function WhatIfSimulator({ videos }) {
-  const [settings] = useSettingsCtx();
   const [params, setParams] = useState({
     object: "pothole", speed_kmh: 35, distance_m: 20,
     wetness: 0.5, visibility: 0.8, lane_position: 1.0,

@@ -1,8 +1,7 @@
 import React, { useEffect, useState } from "react";
-import { Film, ScanLine, ShieldAlert, Timer, Gauge, TrendingUp, AlertTriangle } from "lucide-react";
+import { Film, ScanLine, ShieldAlert, Timer, Gauge } from "lucide-react";
 import { getAnalytics } from "../api.js";
 import { Panel, Kpi, ScoreGauge, HBars, levelColor, levelHue } from "../ui.jsx";
-import { useSettingsCtx } from "../App.jsx";
 
 const W = 620, H = 210, PAD = { l: 34, r: 12, t: 16, b: 28 };
 
@@ -27,7 +26,7 @@ function LineChart({ labels, values, color = "var(--gold)" }) {
       <polyline points={pts} fill="none" stroke={color} strokeWidth="2.4" strokeLinejoin="round" strokeLinecap="round" />
       {values.map((v, i) => (
         <g key={i}>
-          <circle cx={x(i)} cy={y(v)} r="3.4" fill={color} stroke="#0B0F17" strokeWidth="1.5" />
+          <circle cx={x(i)} cy={y(v)} r="3.4" fill={color} stroke="var(--bg)" strokeWidth="1.5" />
           <text x={x(i)} y={H - 8} textAnchor="middle" fontSize="10" fill="var(--muted)">{labels[i]}</text>
         </g>
       ))}
@@ -106,7 +105,6 @@ function DailyStack({ daily }) {
 
 export default function Analytics({ videos }) {
   const [data, setData] = useState(null);
-  const [settings] = useSettingsCtx();
   const videoCount = Array.isArray(videos) ? videos.length : 0;
 
   useEffect(() => {

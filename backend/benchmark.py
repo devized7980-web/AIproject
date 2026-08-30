@@ -15,12 +15,14 @@ import cv2
 ROOT = Path(__file__).resolve().parent.parent
 OUTPUT = ROOT / "output"
 
+MODEL_DIR = ROOT / "models"
+
 MODELS = [
-    {"key": "yolo11n", "name": "YOLO11n", "path": ROOT / "yolo11n.pt",
+    {"key": "yolo11n", "name": "YOLO11n", "path": MODEL_DIR / "yolo11n.pt",
      "desc": "Common objects (COCO) baseline"},
-    {"key": "best", "name": "best.pt (custom)", "path": ROOT / "best.pt",
+    {"key": "best", "name": "best.pt (custom)", "path": MODEL_DIR / "best.pt",
      "desc": "Custom road-damage model"},
-    {"key": "yolo26n", "name": "YOLO26n", "path": ROOT / "yolo26n.pt",
+    {"key": "yolo26n", "name": "YOLO26n", "path": MODEL_DIR / "yolo26n.pt",
      "desc": "Next-gen baseline"},
 ]
 

@@ -1,4 +1,4 @@
-import React, { useRef } from "react";
+import React from "react";
 import { LEVELS } from "./data.js";
 
 export const levelColor = (l) =>
@@ -128,20 +128,8 @@ export const LevelBar = ({ counts }) => (
   </>
 );
 
-export const Panel = ({ title, right, children, pad = true }) => {
-  const panelRef = useRef(null);
-  const moveLight = (event) => {
-    const panel = panelRef.current;
-    if (!panel) return;
-    const rect = panel.getBoundingClientRect();
-    panel.style.setProperty("--panel-x", `${event.clientX - rect.left}px`);
-    panel.style.setProperty("--panel-y", `${event.clientY - rect.top}px`);
-    panel.style.setProperty("--panel-glow", "1");
-  };
-  const leaveLight = () => panelRef.current?.style.setProperty("--panel-glow", "0");
-
-  return (
-  <section ref={panelRef} className="sw-panel" onPointerMove={moveLight} onPointerLeave={leaveLight}>
+export const Panel = ({ title, right, children, pad = true }) => (
+  <section className="sw-panel">
     {title && (
       <header className="sw-panel-h">
         <h2>{title}</h2>
@@ -150,8 +138,7 @@ export const Panel = ({ title, right, children, pad = true }) => {
     )}
     {pad ? <div className="sw-panel-b">{children}</div> : children}
   </section>
-  );
-};
+);
 
 export const Kpi = ({ label, value, unit, accent, Icon }) => (
   <div className="sw-kpi">

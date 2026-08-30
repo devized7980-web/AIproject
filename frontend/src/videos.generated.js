@@ -4,30 +4,1718 @@
 export const VIDEOS = [
   {
     "id": "video_1",
-    "raw": "road_video_1.mp4.MP4",
+    "title": "Road Video 10.Mp4 - Copy",
+    "file": "Road Video 10.Mp4 - Copy_processed.mp4",
+    "raw": "Road Video 10.Mp4 - Copy.mp4",
+    "thumb": "Road Video 10.Mp4 - Copy_thumb.jpg",
+    "location": "Untagged route",
+    "weather": "Unknown",
+    "duration": "01:22",
+    "frames": 1854,
+    "source_fps": 22.573052,
+    "total_detections": 6099,
+    "incidents": 57,
+    "minimum_ttc_s": 0.35,
+    "average_processing_fps": 3.49,
+    "risk_counts": {
+      "SAFE": 5144,
+      "CAUTION": 318,
+      "WARNING": 476,
+      "CRITICAL": 161
+    },
+    "object_counts": {
+      "car": 1890,
+      "person": 2769,
+      "bicycle": 1006,
+      "traffic light": 275,
+      "motorcycle": 22,
+      "bus": 119,
+      "longitudinal crack": 1,
+      "transverse crack": 1,
+      "truck": 16
+    },
+    "overall_risk": "CAUTION",
+    "events": [
+      {
+        "t": "00:00",
+        "pct": 0.1,
+        "level": "SAFE",
+        "object": "car",
+        "label": "Object At Safe Distance",
+        "action": "OBJECT AT SAFE DISTANCE",
+        "distance_m": 15.6,
+        "ttc_s": null,
+        "confidence": 0.73,
+        "boxes": [
+          {
+            "x": 49.7,
+            "y": 51.1,
+            "w": 6.3,
+            "h": 9.0,
+            "tag": "car 73%"
+          }
+        ]
+      },
+      {
+        "t": "00:12",
+        "pct": 14.5,
+        "level": "SAFE",
+        "object": "car",
+        "label": "Object Outside Vehicle Lane",
+        "action": "OBJECT OUTSIDE VEHICLE LANE",
+        "distance_m": 24.0,
+        "ttc_s": 47.25,
+        "confidence": 0.84,
+        "boxes": [
+          {
+            "x": 58.5,
+            "y": 51.0,
+            "w": 4.1,
+            "h": 5.7,
+            "tag": "car 84%"
+          }
+        ]
+      },
+      {
+        "t": "00:14",
+        "pct": 16.5,
+        "level": "CAUTION",
+        "object": "person",
+        "label": "Caution Object In Vehicle Lane",
+        "action": "CAUTION OBJECT IN VEHICLE LANE",
+        "distance_m": 13.9,
+        "ttc_s": 10.26,
+        "confidence": 0.5,
+        "boxes": [
+          {
+            "x": 42.4,
+            "y": 49.4,
+            "w": 2.1,
+            "h": 11.7,
+            "tag": "person 50%"
+          }
+        ]
+      },
+      {
+        "t": "00:14",
+        "pct": 17.2,
+        "level": "WARNING",
+        "object": "person",
+        "label": "Slow Down Hazard Ahead",
+        "action": "SLOW DOWN HAZARD AHEAD",
+        "distance_m": 11.2,
+        "ttc_s": 2.95,
+        "confidence": 0.53,
+        "boxes": [
+          {
+            "x": 42.9,
+            "y": 49.0,
+            "w": 2.5,
+            "h": 10.0,
+            "tag": "person 53%"
+          }
+        ]
+      },
+      {
+        "t": "00:16",
+        "pct": 19.7,
+        "level": "WARNING",
+        "object": "person",
+        "label": "Slow Down Hazard Ahead",
+        "action": "SLOW DOWN HAZARD AHEAD",
+        "distance_m": 6.2,
+        "ttc_s": 10.78,
+        "confidence": 0.52,
+        "boxes": [
+          {
+            "x": 39.6,
+            "y": 43.8,
+            "w": 4.5,
+            "h": 21.4,
+            "tag": "person 52%"
+          }
+        ]
+      },
+      {
+        "t": "00:18",
+        "pct": 22.2,
+        "level": "WARNING",
+        "object": "bicycle",
+        "label": "Slow Down And Increase Following Distance",
+        "action": "SLOW DOWN AND INCREASE FOLLOWING DISTANCE",
+        "distance_m": 4.6,
+        "ttc_s": 2.16,
+        "confidence": 0.68,
+        "boxes": [
+          {
+            "x": 29.2,
+            "y": 54.0,
+            "w": 8.5,
+            "h": 17.9,
+            "tag": "bicycle 68%"
+          }
+        ]
+      },
+      {
+        "t": "00:18",
+        "pct": 22.4,
+        "level": "CRITICAL",
+        "object": "bicycle",
+        "label": "Brake Now Object Too Close",
+        "action": "BRAKE NOW OBJECT TOO CLOSE",
+        "distance_m": 3.8,
+        "ttc_s": 1.31,
+        "confidence": 0.65,
+        "boxes": [
+          {
+            "x": 28.1,
+            "y": 52.4,
+            "w": 9.5,
+            "h": 24.6,
+            "tag": "bicycle 65%"
+          }
+        ]
+      },
+      {
+        "t": "00:20",
+        "pct": 24.9,
+        "level": "WARNING",
+        "object": "bicycle",
+        "label": "Slow Down And Increase Following Distance",
+        "action": "SLOW DOWN AND INCREASE FOLLOWING DISTANCE",
+        "distance_m": 6.1,
+        "ttc_s": 1.63,
+        "confidence": 0.71,
+        "boxes": [
+          {
+            "x": 35.1,
+            "y": 51.7,
+            "w": 5.7,
+            "h": 20.6,
+            "tag": "bicycle 71%"
+          }
+        ]
+      },
+      {
+        "t": "00:38",
+        "pct": 46.1,
+        "level": "WARNING",
+        "object": "person",
+        "label": "Slow Down Hazard Ahead",
+        "action": "SLOW DOWN HAZARD AHEAD",
+        "distance_m": 3.8,
+        "ttc_s": null,
+        "confidence": 0.68,
+        "boxes": [
+          {
+            "x": 33.7,
+            "y": 48.5,
+            "w": 6.9,
+            "h": 24.7,
+            "tag": "person 68%"
+          }
+        ]
+      },
+      {
+        "t": "00:44",
+        "pct": 53.2,
+        "level": "CRITICAL",
+        "object": "bicycle",
+        "label": "Brake Now Object Too Close",
+        "action": "BRAKE NOW OBJECT TOO CLOSE",
+        "distance_m": 2.0,
+        "ttc_s": null,
+        "confidence": 0.57,
+        "boxes": [
+          {
+            "x": 9.1,
+            "y": 56.5,
+            "w": 15.7,
+            "h": 36.9,
+            "tag": "bicycle 57%"
+          }
+        ]
+      },
+      {
+        "t": "01:01",
+        "pct": 73.9,
+        "level": "WARNING",
+        "object": "person",
+        "label": "Slow Down Hazard Ahead",
+        "action": "SLOW DOWN HAZARD AHEAD",
+        "distance_m": 5.9,
+        "ttc_s": null,
+        "confidence": 0.79,
+        "boxes": [
+          {
+            "x": 38.4,
+            "y": 45.4,
+            "w": 4.8,
+            "h": 20.4,
+            "tag": "person 79%"
+          }
+        ]
+      },
+      {
+        "t": "01:03",
+        "pct": 76.3,
+        "level": "WARNING",
+        "object": "bicycle",
+        "label": "Slow Down And Increase Following Distance",
+        "action": "SLOW DOWN AND INCREASE FOLLOWING DISTANCE",
+        "distance_m": 5.3,
+        "ttc_s": 2.25,
+        "confidence": 0.72,
+        "boxes": [
+          {
+            "x": 29.0,
+            "y": 61.3,
+            "w": 7.1,
+            "h": 21.0,
+            "tag": "bicycle 72%"
+          }
+        ]
+      },
+      {
+        "t": "01:05",
+        "pct": 78.8,
+        "level": "CRITICAL",
+        "object": "person",
+        "label": "Brake Immediately Person Ahead",
+        "action": "BRAKE IMMEDIATELY PERSON AHEAD",
+        "distance_m": 2.4,
+        "ttc_s": 1.04,
+        "confidence": 0.77,
+        "boxes": [
+          {
+            "x": 18.7,
+            "y": 40.4,
+            "w": 12.2,
+            "h": 48.3,
+            "tag": "person 77%"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "video_2",
+    "title": "Road Video 11.Mp4 - Copy",
+    "file": "Road Video 11.Mp4 - Copy_processed.mp4",
+    "raw": "Road Video 11.Mp4 - Copy.mp4",
+    "thumb": "Road Video 11.Mp4 - Copy_thumb.jpg",
+    "location": "Untagged route",
+    "weather": "Unknown",
+    "duration": "00:13",
+    "frames": 299,
+    "source_fps": 22.503763,
+    "total_detections": 1040,
+    "incidents": 10,
+    "minimum_ttc_s": 1.198,
+    "average_processing_fps": 3.48,
+    "risk_counts": {
+      "CRITICAL": 87,
+      "CAUTION": 130,
+      "WARNING": 270,
+      "SAFE": 553
+    },
+    "object_counts": {
+      "car": 1039,
+      "longitudinal crack": 1
+    },
+    "overall_risk": "CRITICAL",
+    "events": [
+      {
+        "t": "00:00",
+        "pct": 0.7,
+        "level": "CRITICAL",
+        "object": "car",
+        "label": "Brake Now Object Too Close",
+        "action": "BRAKE NOW OBJECT TOO CLOSE",
+        "distance_m": 2.7,
+        "ttc_s": null,
+        "confidence": 0.9,
+        "boxes": [
+          {
+            "x": 0.0,
+            "y": 36.8,
+            "w": 36.2,
+            "h": 62.2,
+            "tag": "car 90%"
+          }
+        ]
+      },
+      {
+        "t": "00:02",
+        "pct": 15.7,
+        "level": "WARNING",
+        "object": "car",
+        "label": "Slow Down And Increase Following Distance",
+        "action": "SLOW DOWN AND INCREASE FOLLOWING DISTANCE",
+        "distance_m": 4.8,
+        "ttc_s": null,
+        "confidence": 0.65,
+        "boxes": [
+          {
+            "x": 48.6,
+            "y": 46.0,
+            "w": 20.6,
+            "h": 31.9,
+            "tag": "car 65%"
+          }
+        ]
+      },
+      {
+        "t": "00:04",
+        "pct": 31.1,
+        "level": "WARNING",
+        "object": "car",
+        "label": "Slow Down And Increase Following Distance",
+        "action": "SLOW DOWN AND INCREASE FOLLOWING DISTANCE",
+        "distance_m": 5.0,
+        "ttc_s": null,
+        "confidence": 0.61,
+        "boxes": [
+          {
+            "x": 47.0,
+            "y": 46.1,
+            "w": 19.8,
+            "h": 29.6,
+            "tag": "car 61%"
+          }
+        ]
+      },
+      {
+        "t": "00:06",
+        "pct": 46.5,
+        "level": "CRITICAL",
+        "object": "car",
+        "label": "Brake Now Object Too Close",
+        "action": "BRAKE NOW OBJECT TOO CLOSE",
+        "distance_m": 2.4,
+        "ttc_s": 10.31,
+        "confidence": 0.84,
+        "boxes": [
+          {
+            "x": 0.0,
+            "y": 42.2,
+            "w": 41.9,
+            "h": 42.4,
+            "tag": "car 84%"
+          }
+        ]
+      },
+      {
+        "t": "00:08",
+        "pct": 61.9,
+        "level": "WARNING",
+        "object": "car",
+        "label": "Slow Down And Increase Following Distance",
+        "action": "SLOW DOWN AND INCREASE FOLLOWING DISTANCE",
+        "distance_m": 3.5,
+        "ttc_s": null,
+        "confidence": 0.85,
+        "boxes": [
+          {
+            "x": 24.4,
+            "y": 44.2,
+            "w": 27.4,
+            "h": 31.5,
+            "tag": "car 85%"
+          }
+        ]
+      },
+      {
+        "t": "00:10",
+        "pct": 76.9,
+        "level": "WARNING",
+        "object": "car",
+        "label": "Slow Down And Increase Following Distance",
+        "action": "SLOW DOWN AND INCREASE FOLLOWING DISTANCE",
+        "distance_m": 4.5,
+        "ttc_s": null,
+        "confidence": 0.79,
+        "boxes": [
+          {
+            "x": 39.1,
+            "y": 46.8,
+            "w": 22.1,
+            "h": 30.0,
+            "tag": "car 79%"
+          }
+        ]
+      },
+      {
+        "t": "00:12",
+        "pct": 92.3,
+        "level": "WARNING",
+        "object": "car",
+        "label": "Slow Down And Increase Following Distance",
+        "action": "SLOW DOWN AND INCREASE FOLLOWING DISTANCE",
+        "distance_m": 5.3,
+        "ttc_s": null,
+        "confidence": 0.81,
+        "boxes": [
+          {
+            "x": 45.5,
+            "y": 47.9,
+            "w": 18.0,
+            "h": 28.5,
+            "tag": "car 81%"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "video_3",
+    "title": "Road Video 12.Mp4",
+    "file": "Road Video 12.Mp4_processed.mp4",
+    "raw": "Road Video 12.Mp4.mp4",
+    "thumb": "Road Video 12.Mp4_thumb.jpg",
+    "location": "Untagged route",
+    "weather": "Unknown",
+    "duration": "01:31",
+    "frames": 2132,
+    "source_fps": 23.315836,
+    "total_detections": 2874,
+    "incidents": 54,
+    "minimum_ttc_s": 0.337,
+    "average_processing_fps": 3.85,
+    "risk_counts": {
+      "SAFE": 2154,
+      "CAUTION": 349,
+      "WARNING": 236,
+      "CRITICAL": 135
+    },
+    "object_counts": {
+      "traffic light": 70,
+      "car": 2563,
+      "truck": 134,
+      "person": 24,
+      "bus": 81,
+      "motorcycle": 2
+    },
+    "overall_risk": "WARNING",
+    "events": [
+      {
+        "t": "00:01",
+        "pct": 1.5,
+        "level": "SAFE",
+        "object": "traffic light",
+        "label": "Object Outside Vehicle Lane",
+        "action": "OBJECT OUTSIDE VEHICLE LANE",
+        "distance_m": 6.4,
+        "ttc_s": null,
+        "confidence": 0.52,
+        "boxes": [
+          {
+            "x": 96.0,
+            "y": 27.5,
+            "w": 3.9,
+            "h": 10.8,
+            "tag": "traffic light 52%"
+          }
+        ]
+      },
+      {
+        "t": "00:03",
+        "pct": 3.6,
+        "level": "CAUTION",
+        "object": "car",
+        "label": "Caution Object In Vehicle Lane",
+        "action": "CAUTION OBJECT IN VEHICLE LANE",
+        "distance_m": 46.8,
+        "ttc_s": 4.67,
+        "confidence": 0.61,
+        "boxes": [
+          {
+            "x": 54.3,
+            "y": 61.0,
+            "w": 3.2,
+            "h": 5.6,
+            "tag": "car 61%"
+          }
+        ]
+      },
+      {
+        "t": "00:05",
+        "pct": 5.9,
+        "level": "WARNING",
+        "object": "car",
+        "label": "Slow Down And Increase Following Distance",
+        "action": "SLOW DOWN AND INCREASE FOLLOWING DISTANCE",
+        "distance_m": 19.0,
+        "ttc_s": 2.56,
+        "confidence": 0.53,
+        "boxes": [
+          {
+            "x": 27.1,
+            "y": 65.6,
+            "w": 8.1,
+            "h": 6.0,
+            "tag": "car 53%"
+          }
+        ]
+      },
+      {
+        "t": "00:10",
+        "pct": 10.8,
+        "level": "CRITICAL",
+        "object": "person",
+        "label": "Brake Immediately Person Ahead",
+        "action": "BRAKE IMMEDIATELY PERSON AHEAD",
+        "distance_m": 1.4,
+        "ttc_s": null,
+        "confidence": 0.52,
+        "boxes": [
+          {
+            "x": 67.8,
+            "y": 32.9,
+            "w": 32.0,
+            "h": 65.8,
+            "tag": "person 52%"
+          }
+        ]
+      },
+      {
+        "t": "00:12",
+        "pct": 13.6,
+        "level": "WARNING",
+        "object": "car",
+        "label": "Slow Down And Increase Following Distance",
+        "action": "SLOW DOWN AND INCREASE FOLLOWING DISTANCE",
+        "distance_m": 8.4,
+        "ttc_s": 1.96,
+        "confidence": 0.82,
+        "boxes": [
+          {
+            "x": 20.3,
+            "y": 65.8,
+            "w": 18.9,
+            "h": 12.9,
+            "tag": "car 82%"
+          }
+        ]
+      },
+      {
+        "t": "00:15",
+        "pct": 16.5,
+        "level": "WARNING",
+        "object": "car",
+        "label": "Slow Down And Increase Following Distance",
+        "action": "SLOW DOWN AND INCREASE FOLLOWING DISTANCE",
+        "distance_m": 3.3,
+        "ttc_s": null,
+        "confidence": 0.8,
+        "boxes": [
+          {
+            "x": 58.0,
+            "y": 56.0,
+            "w": 41.9,
+            "h": 42.9,
+            "tag": "car 80%"
+          }
+        ]
+      },
+      {
+        "t": "00:18",
+        "pct": 19.7,
+        "level": "CRITICAL",
+        "object": "car",
+        "label": "Brake Now Object Too Close",
+        "action": "BRAKE NOW OBJECT TOO CLOSE",
+        "distance_m": 11.5,
+        "ttc_s": 0.45,
+        "confidence": 0.64,
+        "boxes": [
+          {
+            "x": 63.5,
+            "y": 61.7,
+            "w": 15.8,
+            "h": 24.0,
+            "tag": "car 64%"
+          }
+        ]
+      },
+      {
+        "t": "00:20",
+        "pct": 21.9,
+        "level": "WARNING",
+        "object": "car",
+        "label": "Slow Down And Increase Following Distance",
+        "action": "SLOW DOWN AND INCREASE FOLLOWING DISTANCE",
+        "distance_m": 5.2,
+        "ttc_s": null,
+        "confidence": 0.68,
+        "boxes": [
+          {
+            "x": 70.2,
+            "y": 59.0,
+            "w": 29.7,
+            "h": 40.4,
+            "tag": "car 68%"
+          }
+        ]
+      },
+      {
+        "t": "00:22",
+        "pct": 24.1,
+        "level": "WARNING",
+        "object": "car",
+        "label": "Slow Down And Increase Following Distance",
+        "action": "SLOW DOWN AND INCREASE FOLLOWING DISTANCE",
+        "distance_m": 26.9,
+        "ttc_s": 1.59,
+        "confidence": 0.69,
+        "boxes": [
+          {
+            "x": 58.8,
+            "y": 66.2,
+            "w": 6.2,
+            "h": 9.8,
+            "tag": "car 69%"
+          }
+        ]
+      },
+      {
+        "t": "00:30",
+        "pct": 32.3,
+        "level": "CRITICAL",
+        "object": "car",
+        "label": "Brake Now Object Too Close",
+        "action": "BRAKE NOW OBJECT TOO CLOSE",
+        "distance_m": 22.6,
+        "ttc_s": 0.94,
+        "confidence": 0.63,
+        "boxes": [
+          {
+            "x": 39.2,
+            "y": 57.3,
+            "w": 7.0,
+            "h": 9.2,
+            "tag": "car 63%"
+          }
+        ]
+      },
+      {
+        "t": "00:32",
+        "pct": 34.8,
+        "level": "WARNING",
+        "object": "car",
+        "label": "Slow Down And Increase Following Distance",
+        "action": "SLOW DOWN AND INCREASE FOLLOWING DISTANCE",
+        "distance_m": 10.5,
+        "ttc_s": 2.15,
+        "confidence": 0.76,
+        "boxes": [
+          {
+            "x": 27.7,
+            "y": 53.5,
+            "w": 16.4,
+            "h": 13.5,
+            "tag": "car 76%"
+          }
+        ]
+      },
+      {
+        "t": "00:36",
+        "pct": 39.1,
+        "level": "WARNING",
+        "object": "car",
+        "label": "Slow Down And Increase Following Distance",
+        "action": "SLOW DOWN AND INCREASE FOLLOWING DISTANCE",
+        "distance_m": 16.9,
+        "ttc_s": 2.02,
+        "confidence": 0.53,
+        "boxes": [
+          {
+            "x": 27.6,
+            "y": 58.5,
+            "w": 12.4,
+            "h": 13.5,
+            "tag": "car 53%"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "video_4",
+    "title": "Road Video 14.Mp4",
+    "file": "Road Video 14.Mp4_processed.mp4",
+    "raw": "Road Video 14.Mp4.mp4",
+    "thumb": "Road Video 14.Mp4_thumb.jpg",
+    "location": "Untagged route",
+    "weather": "Unknown",
+    "duration": "01:29",
+    "frames": 1998,
+    "source_fps": 22.518596,
+    "total_detections": 6320,
+    "incidents": 29,
+    "minimum_ttc_s": 0.212,
+    "average_processing_fps": 3.4,
+    "risk_counts": {
+      "CAUTION": 593,
+      "SAFE": 5503,
+      "WARNING": 196,
+      "CRITICAL": 28
+    },
+    "object_counts": {
+      "car": 5337,
+      "traffic light": 479,
+      "stop sign": 7,
+      "truck": 443,
+      "bus": 54
+    },
+    "overall_risk": "CAUTION",
+    "events": [
+      {
+        "t": "00:00",
+        "pct": 0.1,
+        "level": "CAUTION",
+        "object": "car",
+        "label": "Caution Object In Vehicle Lane",
+        "action": "CAUTION OBJECT IN VEHICLE LANE",
+        "distance_m": 11.6,
+        "ttc_s": null,
+        "confidence": 0.84,
+        "boxes": [
+          {
+            "x": 50.9,
+            "y": 58.1,
+            "w": 8.6,
+            "h": 11.9,
+            "tag": "car 84%"
+          }
+        ]
+      },
+      {
+        "t": "00:01",
+        "pct": 0.8,
+        "level": "WARNING",
+        "object": "car",
+        "label": "Slow Down And Increase Following Distance",
+        "action": "SLOW DOWN AND INCREASE FOLLOWING DISTANCE",
+        "distance_m": 10.0,
+        "ttc_s": 2.93,
+        "confidence": 0.85,
+        "boxes": [
+          {
+            "x": 54.7,
+            "y": 58.9,
+            "w": 10.1,
+            "h": 12.2,
+            "tag": "car 85%"
+          }
+        ]
+      },
+      {
+        "t": "00:01",
+        "pct": 1.3,
+        "level": "CRITICAL",
+        "object": "car",
+        "label": "Brake Now Object Too Close",
+        "action": "BRAKE NOW OBJECT TOO CLOSE",
+        "distance_m": 9.4,
+        "ttc_s": 1.37,
+        "confidence": 0.85,
+        "boxes": [
+          {
+            "x": 62.0,
+            "y": 60.7,
+            "w": 12.0,
+            "h": 12.6,
+            "tag": "car 85%"
+          }
+        ]
+      },
+      {
+        "t": "00:34",
+        "pct": 38.6,
+        "level": "CRITICAL",
+        "object": "car",
+        "label": "Brake Now Object Too Close",
+        "action": "BRAKE NOW OBJECT TOO CLOSE",
+        "distance_m": 8.3,
+        "ttc_s": 0.75,
+        "confidence": 0.85,
+        "boxes": [
+          {
+            "x": 65.8,
+            "y": 62.2,
+            "w": 14.7,
+            "h": 20.0,
+            "tag": "car 85%"
+          }
+        ]
+      },
+      {
+        "t": "00:38",
+        "pct": 42.9,
+        "level": "CRITICAL",
+        "object": "car",
+        "label": "Brake Now Object Too Close",
+        "action": "BRAKE NOW OBJECT TOO CLOSE",
+        "distance_m": 17.8,
+        "ttc_s": 1.44,
+        "confidence": 0.87,
+        "boxes": [
+          {
+            "x": 65.0,
+            "y": 66.0,
+            "w": 6.1,
+            "h": 7.4,
+            "tag": "car 87%"
+          }
+        ]
+      },
+      {
+        "t": "00:50",
+        "pct": 56.1,
+        "level": "WARNING",
+        "object": "car",
+        "label": "Slow Down And Increase Following Distance",
+        "action": "SLOW DOWN AND INCREASE FOLLOWING DISTANCE",
+        "distance_m": 13.7,
+        "ttc_s": 2.96,
+        "confidence": 0.8,
+        "boxes": [
+          {
+            "x": 48.0,
+            "y": 56.0,
+            "w": 7.6,
+            "h": 11.4,
+            "tag": "car 80%"
+          }
+        ]
+      },
+      {
+        "t": "00:52",
+        "pct": 58.8,
+        "level": "WARNING",
+        "object": "car",
+        "label": "Slow Down And Increase Following Distance",
+        "action": "SLOW DOWN AND INCREASE FOLLOWING DISTANCE",
+        "distance_m": 13.5,
+        "ttc_s": 2.73,
+        "confidence": 0.73,
+        "boxes": [
+          {
+            "x": 56.7,
+            "y": 61.5,
+            "w": 7.7,
+            "h": 10.1,
+            "tag": "car 73%"
+          }
+        ]
+      },
+      {
+        "t": "00:53",
+        "pct": 60.0,
+        "level": "SAFE",
+        "object": "car",
+        "label": "Object Outside Vehicle Lane",
+        "action": "OBJECT OUTSIDE VEHICLE LANE",
+        "distance_m": 16.4,
+        "ttc_s": 5.23,
+        "confidence": 0.54,
+        "boxes": [
+          {
+            "x": 65.9,
+            "y": 59.4,
+            "w": 7.3,
+            "h": 11.4,
+            "tag": "car 54%"
+          }
+        ]
+      },
+      {
+        "t": "00:54",
+        "pct": 61.1,
+        "level": "WARNING",
+        "object": "car",
+        "label": "Slow Down And Increase Following Distance",
+        "action": "SLOW DOWN AND INCREASE FOLLOWING DISTANCE",
+        "distance_m": 10.3,
+        "ttc_s": 2.47,
+        "confidence": 0.81,
+        "boxes": [
+          {
+            "x": 46.8,
+            "y": 55.8,
+            "w": 15.2,
+            "h": 20.8,
+            "tag": "car 81%"
+          }
+        ]
+      },
+      {
+        "t": "00:57",
+        "pct": 63.9,
+        "level": "WARNING",
+        "object": "car",
+        "label": "Slow Down And Increase Following Distance",
+        "action": "SLOW DOWN AND INCREASE FOLLOWING DISTANCE",
+        "distance_m": 6.4,
+        "ttc_s": 6.17,
+        "confidence": 0.73,
+        "boxes": [
+          {
+            "x": 63.0,
+            "y": 56.1,
+            "w": 15.7,
+            "h": 19.3,
+            "tag": "car 73%"
+          }
+        ]
+      },
+      {
+        "t": "01:02",
+        "pct": 69.4,
+        "level": "WARNING",
+        "object": "car",
+        "label": "Slow Down And Increase Following Distance",
+        "action": "SLOW DOWN AND INCREASE FOLLOWING DISTANCE",
+        "distance_m": 6.7,
+        "ttc_s": null,
+        "confidence": 0.55,
+        "boxes": [
+          {
+            "x": 60.3,
+            "y": 62.1,
+            "w": 13.6,
+            "h": 16.8,
+            "tag": "car 55%"
+          }
+        ]
+      },
+      {
+        "t": "01:07",
+        "pct": 75.4,
+        "level": "WARNING",
+        "object": "car",
+        "label": "Slow Down And Increase Following Distance",
+        "action": "SLOW DOWN AND INCREASE FOLLOWING DISTANCE",
+        "distance_m": 6.0,
+        "ttc_s": 13.93,
+        "confidence": 0.81,
+        "boxes": [
+          {
+            "x": 41.7,
+            "y": 60.6,
+            "w": 16.4,
+            "h": 21.1,
+            "tag": "car 81%"
+          }
+        ]
+      },
+      {
+        "t": "01:09",
+        "pct": 77.7,
+        "level": "WARNING",
+        "object": "car",
+        "label": "Slow Down And Increase Following Distance",
+        "action": "SLOW DOWN AND INCREASE FOLLOWING DISTANCE",
+        "distance_m": 6.6,
+        "ttc_s": null,
+        "confidence": 0.85,
+        "boxes": [
+          {
+            "x": 42.5,
+            "y": 61.4,
+            "w": 14.9,
+            "h": 20.8,
+            "tag": "car 85%"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "video_5",
+    "title": "Road Video 4.Mp4 - Copy",
+    "file": "Road Video 4.Mp4 - Copy_processed.mp4",
+    "raw": "Road Video 4.Mp4 - Copy.mp4",
+    "thumb": "Road Video 4.Mp4 - Copy_thumb.jpg",
+    "location": "Untagged route",
+    "weather": "Unknown",
+    "duration": "01:29",
+    "frames": 2135,
+    "source_fps": 24.095252,
+    "total_detections": 8359,
+    "incidents": 46,
+    "minimum_ttc_s": 0.185,
+    "average_processing_fps": 3.88,
+    "risk_counts": {
+      "SAFE": 7283,
+      "WARNING": 212,
+      "CAUTION": 759,
+      "CRITICAL": 105
+    },
+    "object_counts": {
+      "traffic light": 1692,
+      "person": 3405,
+      "car": 3110,
+      "bicycle": 96,
+      "motorcycle": 26,
+      "bus": 8,
+      "truck": 22
+    },
+    "overall_risk": "CAUTION",
+    "events": [
+      {
+        "t": "00:00",
+        "pct": 0.1,
+        "level": "WARNING",
+        "object": "person",
+        "label": "Slow Down Hazard Ahead",
+        "action": "SLOW DOWN HAZARD AHEAD",
+        "distance_m": 5.9,
+        "ttc_s": null,
+        "confidence": 0.71,
+        "boxes": [
+          {
+            "x": 58.2,
+            "y": 54.0,
+            "w": 4.6,
+            "h": 15.3,
+            "tag": "person 71%"
+          }
+        ]
+      },
+      {
+        "t": "00:02",
+        "pct": 2.5,
+        "level": "SAFE",
+        "object": "person",
+        "label": "Object Outside Vehicle Lane",
+        "action": "OBJECT OUTSIDE VEHICLE LANE",
+        "distance_m": 4.5,
+        "ttc_s": 0.45,
+        "confidence": 0.81,
+        "boxes": [
+          {
+            "x": 83.4,
+            "y": 51.4,
+            "w": 6.1,
+            "h": 22.1,
+            "tag": "person 81%"
+          }
+        ]
+      },
+      {
+        "t": "00:13",
+        "pct": 14.2,
+        "level": "WARNING",
+        "object": "person",
+        "label": "Slow Down Hazard Ahead",
+        "action": "SLOW DOWN HAZARD AHEAD",
+        "distance_m": 12.3,
+        "ttc_s": 2.14,
+        "confidence": 0.6,
+        "boxes": [
+          {
+            "x": 64.2,
+            "y": 58.6,
+            "w": 2.3,
+            "h": 11.4,
+            "tag": "person 60%"
+          }
+        ]
+      },
+      {
+        "t": "00:14",
+        "pct": 15.5,
+        "level": "CRITICAL",
+        "object": "person",
+        "label": "Brake Immediately Person Ahead",
+        "action": "BRAKE IMMEDIATELY PERSON AHEAD",
+        "distance_m": 10.2,
+        "ttc_s": 1.26,
+        "confidence": 0.64,
+        "boxes": [
+          {
+            "x": 66.5,
+            "y": 57.9,
+            "w": 2.7,
+            "h": 14.2,
+            "tag": "person 64%"
+          }
+        ]
+      },
+      {
+        "t": "00:30",
+        "pct": 33.5,
+        "level": "WARNING",
+        "object": "car",
+        "label": "Slow Down And Increase Following Distance",
+        "action": "SLOW DOWN AND INCREASE FOLLOWING DISTANCE",
+        "distance_m": 12.0,
+        "ttc_s": 2.92,
+        "confidence": 0.83,
+        "boxes": [
+          {
+            "x": 60.3,
+            "y": 60.1,
+            "w": 8.4,
+            "h": 10.3,
+            "tag": "car 83%"
+          }
+        ]
+      },
+      {
+        "t": "00:33",
+        "pct": 36.7,
+        "level": "WARNING",
+        "object": "car",
+        "label": "Slow Down And Increase Following Distance",
+        "action": "SLOW DOWN AND INCREASE FOLLOWING DISTANCE",
+        "distance_m": 3.9,
+        "ttc_s": null,
+        "confidence": 0.69,
+        "boxes": [
+          {
+            "x": 75.7,
+            "y": 54.0,
+            "w": 24.2,
+            "h": 43.5,
+            "tag": "car 69%"
+          }
+        ]
+      },
+      {
+        "t": "00:35",
+        "pct": 39.2,
+        "level": "WARNING",
+        "object": "car",
+        "label": "Slow Down And Increase Following Distance",
+        "action": "SLOW DOWN AND INCREASE FOLLOWING DISTANCE",
+        "distance_m": 12.1,
+        "ttc_s": 2.79,
+        "confidence": 0.83,
+        "boxes": [
+          {
+            "x": 47.7,
+            "y": 59.0,
+            "w": 8.4,
+            "h": 11.0,
+            "tag": "car 83%"
+          }
+        ]
+      },
+      {
+        "t": "00:59",
+        "pct": 66.6,
+        "level": "WARNING",
+        "object": "car",
+        "label": "Slow Down And Increase Following Distance",
+        "action": "SLOW DOWN AND INCREASE FOLLOWING DISTANCE",
+        "distance_m": 16.1,
+        "ttc_s": 2.91,
+        "confidence": 0.85,
+        "boxes": [
+          {
+            "x": 50.2,
+            "y": 57.9,
+            "w": 6.2,
+            "h": 8.9,
+            "tag": "car 85%"
+          }
+        ]
+      },
+      {
+        "t": "01:01",
+        "pct": 69.3,
+        "level": "WARNING",
+        "object": "car",
+        "label": "Slow Down And Increase Following Distance",
+        "action": "SLOW DOWN AND INCREASE FOLLOWING DISTANCE",
+        "distance_m": 8.8,
+        "ttc_s": 2.94,
+        "confidence": 0.9,
+        "boxes": [
+          {
+            "x": 47.7,
+            "y": 55.8,
+            "w": 11.5,
+            "h": 17.1,
+            "tag": "car 90%"
+          }
+        ]
+      },
+      {
+        "t": "01:03",
+        "pct": 71.6,
+        "level": "WARNING",
+        "object": "car",
+        "label": "Slow Down And Increase Following Distance",
+        "action": "SLOW DOWN AND INCREASE FOLLOWING DISTANCE",
+        "distance_m": 4.6,
+        "ttc_s": 2.85,
+        "confidence": 0.9,
+        "boxes": [
+          {
+            "x": 36.2,
+            "y": 51.7,
+            "w": 22.0,
+            "h": 31.7,
+            "tag": "car 90%"
+          }
+        ]
+      },
+      {
+        "t": "01:06",
+        "pct": 75.0,
+        "level": "CRITICAL",
+        "object": "car",
+        "label": "Brake Now Object Too Close",
+        "action": "BRAKE NOW OBJECT TOO CLOSE",
+        "distance_m": 12.3,
+        "ttc_s": 1.37,
+        "confidence": 0.58,
+        "boxes": [
+          {
+            "x": 34.0,
+            "y": 56.4,
+            "w": 11.1,
+            "h": 10.7,
+            "tag": "car 58%"
+          }
+        ]
+      },
+      {
+        "t": "01:09",
+        "pct": 78.0,
+        "level": "WARNING",
+        "object": "car",
+        "label": "Slow Down And Increase Following Distance",
+        "action": "SLOW DOWN AND INCREASE FOLLOWING DISTANCE",
+        "distance_m": 7.0,
+        "ttc_s": 3.38,
+        "confidence": 0.87,
+        "boxes": [
+          {
+            "x": 46.2,
+            "y": 56.8,
+            "w": 14.4,
+            "h": 19.9,
+            "tag": "car 87%"
+          }
+        ]
+      },
+      {
+        "t": "01:12",
+        "pct": 81.2,
+        "level": "CRITICAL",
+        "object": "car",
+        "label": "Brake Now Object Too Close",
+        "action": "BRAKE NOW OBJECT TOO CLOSE",
+        "distance_m": 4.1,
+        "ttc_s": 1.41,
+        "confidence": 0.92,
+        "boxes": [
+          {
+            "x": 0.1,
+            "y": 44.7,
+            "w": 25.2,
+            "h": 52.1,
+            "tag": "car 92%"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "video_6",
+    "title": "Road Video 5.Mp4 - Copy(1)",
+    "file": "Road Video 5.Mp4 - Copy(1)_processed.mp4",
+    "raw": "Road Video 5.Mp4 - Copy(1).mp4",
+    "thumb": "Road Video 5.Mp4 - Copy(1)_thumb.jpg",
+    "location": "Untagged route",
+    "weather": "Unknown",
+    "duration": "01:27",
+    "frames": 2087,
+    "source_fps": 23.970138,
+    "total_detections": 10513,
+    "incidents": 68,
+    "minimum_ttc_s": 0.261,
+    "average_processing_fps": 3.59,
+    "risk_counts": {
+      "WARNING": 329,
+      "SAFE": 8744,
+      "CAUTION": 1261,
+      "CRITICAL": 179
+    },
+    "object_counts": {
+      "car": 4193,
+      "person": 3806,
+      "traffic light": 1621,
+      "motorcycle": 55,
+      "bicycle": 14,
+      "truck": 267,
+      "bus": 557
+    },
+    "overall_risk": "CAUTION",
+    "events": [
+      {
+        "t": "00:00",
+        "pct": 0.1,
+        "level": "WARNING",
+        "object": "car",
+        "label": "Slow Down And Increase Following Distance",
+        "action": "SLOW DOWN AND INCREASE FOLLOWING DISTANCE",
+        "distance_m": 5.3,
+        "ttc_s": null,
+        "confidence": 0.92,
+        "boxes": [
+          {
+            "x": 41.0,
+            "y": 52.8,
+            "w": 18.8,
+            "h": 27.4,
+            "tag": "car 92%"
+          }
+        ]
+      },
+      {
+        "t": "00:02",
+        "pct": 1.8,
+        "level": "CRITICAL",
+        "object": "car",
+        "label": "Brake Now Object Too Close",
+        "action": "BRAKE NOW OBJECT TOO CLOSE",
+        "distance_m": 3.0,
+        "ttc_s": 2.09,
+        "confidence": 0.89,
+        "boxes": [
+          {
+            "x": 8.3,
+            "y": 47.9,
+            "w": 35.2,
+            "h": 47.8,
+            "tag": "car 89%"
+          }
+        ]
+      },
+      {
+        "t": "00:04",
+        "pct": 4.4,
+        "level": "WARNING",
+        "object": "car",
+        "label": "Slow Down And Increase Following Distance",
+        "action": "SLOW DOWN AND INCREASE FOLLOWING DISTANCE",
+        "distance_m": 11.4,
+        "ttc_s": 2.9,
+        "confidence": 0.78,
+        "boxes": [
+          {
+            "x": 31.4,
+            "y": 58.9,
+            "w": 9.1,
+            "h": 12.2,
+            "tag": "car 78%"
+          }
+        ]
+      },
+      {
+        "t": "00:06",
+        "pct": 6.7,
+        "level": "CRITICAL",
+        "object": "person",
+        "label": "Brake Immediately Person Ahead",
+        "action": "BRAKE IMMEDIATELY PERSON AHEAD",
+        "distance_m": 15.2,
+        "ttc_s": 0.88,
+        "confidence": 0.61,
+        "boxes": [
+          {
+            "x": 43.8,
+            "y": 56.2,
+            "w": 2.0,
+            "h": 9.9,
+            "tag": "person 61%"
+          }
+        ]
+      },
+      {
+        "t": "00:09",
+        "pct": 10.3,
+        "level": "CRITICAL",
+        "object": "car",
+        "label": "Brake Now Object Too Close",
+        "action": "BRAKE NOW OBJECT TOO CLOSE",
+        "distance_m": 4.1,
+        "ttc_s": 1.75,
+        "confidence": 0.93,
+        "boxes": [
+          {
+            "x": 0.1,
+            "y": 44.7,
+            "w": 25.0,
+            "h": 52.2,
+            "tag": "car 93%"
+          }
+        ]
+      },
+      {
+        "t": "00:11",
+        "pct": 12.6,
+        "level": "CRITICAL",
+        "object": "car",
+        "label": "Brake Now Object Too Close",
+        "action": "BRAKE NOW OBJECT TOO CLOSE",
+        "distance_m": 2.9,
+        "ttc_s": null,
+        "confidence": 0.93,
+        "boxes": [
+          {
+            "x": 4.9,
+            "y": 52.4,
+            "w": 33.0,
+            "h": 31.0,
+            "tag": "car 93%"
+          }
+        ]
+      },
+      {
+        "t": "00:13",
+        "pct": 15.4,
+        "level": "CRITICAL",
+        "object": "car",
+        "label": "Brake Now Object Too Close",
+        "action": "BRAKE NOW OBJECT TOO CLOSE",
+        "distance_m": 10.5,
+        "ttc_s": 1.13,
+        "confidence": 0.69,
+        "boxes": [
+          {
+            "x": 64.5,
+            "y": 61.9,
+            "w": 10.1,
+            "h": 14.7,
+            "tag": "car 69%"
+          }
+        ]
+      },
+      {
+        "t": "00:17",
+        "pct": 19.0,
+        "level": "WARNING",
+        "object": "car",
+        "label": "Slow Down And Increase Following Distance",
+        "action": "SLOW DOWN AND INCREASE FOLLOWING DISTANCE",
+        "distance_m": 3.4,
+        "ttc_s": null,
+        "confidence": 0.93,
+        "boxes": [
+          {
+            "x": 59.9,
+            "y": 61.5,
+            "w": 29.1,
+            "h": 29.9,
+            "tag": "car 93%"
+          }
+        ]
+      },
+      {
+        "t": "00:19",
+        "pct": 21.3,
+        "level": "WARNING",
+        "object": "person",
+        "label": "Slow Down Hazard Ahead",
+        "action": "SLOW DOWN HAZARD AHEAD",
+        "distance_m": 6.0,
+        "ttc_s": 3.63,
+        "confidence": 0.79,
+        "boxes": [
+          {
+            "x": 31.3,
+            "y": 59.4,
+            "w": 5.0,
+            "h": 18.2,
+            "tag": "person 79%"
+          }
+        ]
+      },
+      {
+        "t": "00:21",
+        "pct": 23.6,
+        "level": "CRITICAL",
+        "object": "car",
+        "label": "Brake Now Object Too Close",
+        "action": "BRAKE NOW OBJECT TOO CLOSE",
+        "distance_m": 20.3,
+        "ttc_s": 0.9,
+        "confidence": 0.68,
+        "boxes": [
+          {
+            "x": 65.9,
+            "y": 67.6,
+            "w": 5.5,
+            "h": 6.9,
+            "tag": "car 68%"
+          }
+        ]
+      },
+      {
+        "t": "00:23",
+        "pct": 26.4,
+        "level": "WARNING",
+        "object": "car",
+        "label": "Slow Down And Increase Following Distance",
+        "action": "SLOW DOWN AND INCREASE FOLLOWING DISTANCE",
+        "distance_m": 11.4,
+        "ttc_s": 2.77,
+        "confidence": 0.86,
+        "boxes": [
+          {
+            "x": 38.2,
+            "y": 63.3,
+            "w": 9.0,
+            "h": 10.0,
+            "tag": "car 86%"
+          }
+        ]
+      },
+      {
+        "t": "00:26",
+        "pct": 29.9,
+        "level": "CRITICAL",
+        "object": "car",
+        "label": "Brake Now Object Too Close",
+        "action": "BRAKE NOW OBJECT TOO CLOSE",
+        "distance_m": 4.4,
+        "ttc_s": 0.99,
+        "confidence": 0.61,
+        "boxes": [
+          {
+            "x": 14.5,
+            "y": 52.6,
+            "w": 24.2,
+            "h": 30.1,
+            "tag": "car 61%"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "video_7",
+    "title": "Road Video 9.Mp4 - Copy",
+    "file": "Road Video 9.Mp4 - Copy_processed.mp4",
+    "raw": "Road Video 9.Mp4 - Copy.mp4",
+    "thumb": "Road Video 9.Mp4 - Copy_thumb.jpg",
+    "location": "Untagged route",
+    "weather": "Unknown",
+    "duration": "00:59",
+    "frames": 1293,
+    "source_fps": 21.51653,
+    "total_detections": 665,
+    "incidents": 0,
+    "minimum_ttc_s": 0.381,
+    "average_processing_fps": 2.96,
+    "risk_counts": {
+      "SAFE": 663,
+      "CAUTION": 2
+    },
+    "object_counts": {
+      "car": 646,
+      "bus": 1,
+      "truck": 2,
+      "person": 8,
+      "traffic light": 8
+    },
+    "overall_risk": "SAFE",
+    "events": [
+      {
+        "t": "00:00",
+        "pct": 0.2,
+        "level": "SAFE",
+        "object": "car",
+        "label": "Object Outside Vehicle Lane",
+        "action": "OBJECT OUTSIDE VEHICLE LANE",
+        "distance_m": 30.0,
+        "ttc_s": null,
+        "confidence": 0.53,
+        "boxes": [
+          {
+            "x": 45.6,
+            "y": 57.1,
+            "w": 4.4,
+            "h": 4.0,
+            "tag": "car 53%"
+          }
+        ]
+      },
+      {
+        "t": "00:06",
+        "pct": 9.6,
+        "level": "CAUTION",
+        "object": "car",
+        "label": "Caution Object In Vehicle Lane",
+        "action": "CAUTION OBJECT IN VEHICLE LANE",
+        "distance_m": 22.1,
+        "ttc_s": 4.94,
+        "confidence": 0.65,
+        "boxes": [
+          {
+            "x": 42.3,
+            "y": 58.6,
+            "w": 6.1,
+            "h": 4.2,
+            "tag": "car 65%"
+          }
+        ]
+      },
+      {
+        "t": "00:42",
+        "pct": 70.7,
+        "level": "SAFE",
+        "object": "car",
+        "label": "Object Outside Vehicle Lane",
+        "action": "OBJECT OUTSIDE VEHICLE LANE",
+        "distance_m": 12.9,
+        "ttc_s": 0.38,
+        "confidence": 0.76,
+        "boxes": [
+          {
+            "x": 0.0,
+            "y": 48.1,
+            "w": 11.9,
+            "h": 21.0,
+            "tag": "car 76%"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "video_8",
     "title": "Urban Traffic and Pedestrian Hazard Detection",
     "file": "road_video_1.mp4_processed.mp4",
+    "raw": "road_video_1.mp4.MP4",
     "thumb": "road_video_1.mp4_thumb.jpg",
     "location": "City centre, 4-lane arterial",
     "weather": "Heavy rain",
     "duration": "00:12",
     "frames": 363,
     "source_fps": 29.987608,
-    "total_detections": 1208,
-    "incidents": 7,
-    "minimum_ttc_s": 0.457,
-    "average_processing_fps": 28.59,
+    "total_detections": 1204,
+    "incidents": 6,
+    "minimum_ttc_s": 0.451,
+    "average_processing_fps": 3.37,
     "risk_counts": {
       "SAFE": 1060,
-      "WARNING": 27,
-      "CRITICAL": 37,
-      "CAUTION": 84
+      "CRITICAL": 40,
+      "WARNING": 23,
+      "CAUTION": 81
     },
     "object_counts": {
-      "person": 294,
-      "car": 690,
+      "person": 293,
+      "car": 681,
       "bus": 166,
-      "truck": 58
+      "truck": 64
     },
     "overall_risk": "CAUTION",
     "events": [
@@ -40,86 +1728,86 @@ export const VIDEOS = [
         "action": "OBJECT AT SAFE DISTANCE",
         "distance_m": 49.7,
         "ttc_s": null,
-        "confidence": 0.6,
+        "confidence": 0.59,
         "boxes": [
           {
             "x": 48.7,
             "y": 58.4,
             "w": 3.1,
             "h": 4.8,
-            "tag": "car 60%"
+            "tag": "car 59%"
           }
         ]
       },
       {
-        "t": "00:01",
-        "pct": 6.9,
-        "level": "WARNING",
-        "object": "bus",
-        "label": "Slow Down And Increase Following Distance",
-        "action": "SLOW DOWN AND INCREASE FOLLOWING DISTANCE",
-        "distance_m": 34.4,
-        "ttc_s": 1.69,
-        "confidence": 0.68,
-        "boxes": [
-          {
-            "x": 56.4,
-            "y": 55.5,
-            "w": 6.1,
-            "h": 9.2,
-            "tag": "bus 68%"
-          }
-        ]
-      },
-      {
-        "t": "00:06",
-        "pct": 46.3,
+        "t": "00:00",
+        "pct": 3.6,
         "level": "CRITICAL",
-        "object": "car",
+        "object": "bus",
         "label": "Brake Now Object Too Close",
         "action": "BRAKE NOW OBJECT TOO CLOSE",
-        "distance_m": 12.1,
-        "ttc_s": 1.32,
-        "confidence": 0.88,
+        "distance_m": 41.6,
+        "ttc_s": 1.27,
+        "confidence": 0.56,
         "boxes": [
           {
-            "x": 63.8,
+            "x": 56.0,
+            "y": 56.1,
+            "w": 5.4,
+            "h": 8.0,
+            "tag": "bus 56%"
+          }
+        ]
+      },
+      {
+        "t": "00:05",
+        "pct": 44.9,
+        "level": "WARNING",
+        "object": "car",
+        "label": "Slow Down And Increase Following Distance",
+        "action": "SLOW DOWN AND INCREASE FOLLOWING DISTANCE",
+        "distance_m": 13.7,
+        "ttc_s": 1.93,
+        "confidence": 0.86,
+        "boxes": [
+          {
+            "x": 62.6,
             "y": 57.8,
-            "w": 13.0,
-            "h": 17.6,
-            "tag": "car 88%"
+            "w": 11.4,
+            "h": 15.5,
+            "tag": "car 86%"
           }
         ]
       },
       {
         "t": "00:09",
-        "pct": 75.2,
+        "pct": 74.9,
         "level": "WARNING",
         "object": "person",
         "label": "Slow Down Hazard Ahead",
         "action": "SLOW DOWN HAZARD AHEAD",
-        "distance_m": 8.4,
-        "ttc_s": 2.24,
-        "confidence": 0.61,
+        "distance_m": 8.6,
+        "ttc_s": 2.73,
+        "confidence": 0.53,
         "boxes": [
           {
-            "x": 31.7,
+            "x": 31.4,
             "y": 56.1,
-            "w": 5.1,
+            "w": 5.2,
             "h": 22.7,
-            "tag": "person 61%"
+            "tag": "person 53%"
           }
         ]
       },
       {
         "t": "00:11",
         "pct": 91.7,
-        "level": "CRITICAL",
+        "level": "WARNING",
         "object": "person",
-        "label": "Brake Immediately Person Ahead",
-        "action": "BRAKE IMMEDIATELY PERSON AHEAD",
+        "label": "Slow Down Hazard Ahead",
+        "action": "SLOW DOWN HAZARD AHEAD",
         "distance_m": 7.4,
-        "ttc_s": 1.15,
+        "ttc_s": 2.13,
         "confidence": 0.56,
         "boxes": [
           {
@@ -134,32 +1822,579 @@ export const VIDEOS = [
     ]
   },
   {
-    "id": "video_2",
-    "raw": "road_video_2.mp4.MP4",
+    "id": "video_9",
+    "title": "Road Video 10.Mp4 - Copy",
+    "file": "road_video_10.mp4 - Copy_processed.mp4",
+    "raw": "road_video_10.mp4 - Copy.mp4",
+    "thumb": "road_video_10.mp4 - Copy_thumb.jpg",
+    "location": "Untagged route",
+    "weather": "Unknown",
+    "duration": "01:22",
+    "frames": 2463,
+    "source_fps": 30.0,
+    "total_detections": 8541,
+    "incidents": 73,
+    "minimum_ttc_s": 0.188,
+    "average_processing_fps": 3.37,
+    "risk_counts": {
+      "SAFE": 7056,
+      "CAUTION": 512,
+      "WARNING": 673,
+      "CRITICAL": 300
+    },
+    "object_counts": {
+      "car": 2573,
+      "person": 3824,
+      "bicycle": 1524,
+      "traffic light": 397,
+      "motorcycle": 30,
+      "bus": 175,
+      "longitudinal crack": 2,
+      "truck": 16
+    },
+    "overall_risk": "CAUTION",
+    "events": [
+      {
+        "t": "00:00",
+        "pct": 0.1,
+        "level": "SAFE",
+        "object": "car",
+        "label": "Object Outside Vehicle Lane",
+        "action": "OBJECT OUTSIDE VEHICLE LANE",
+        "distance_m": 15.6,
+        "ttc_s": null,
+        "confidence": 0.78,
+        "boxes": [
+          {
+            "x": 49.7,
+            "y": 51.2,
+            "w": 6.3,
+            "h": 8.9,
+            "tag": "car 78%"
+          }
+        ]
+      },
+      {
+        "t": "00:13",
+        "pct": 16.0,
+        "level": "CAUTION",
+        "object": "person",
+        "label": "Caution Object In Vehicle Lane",
+        "action": "CAUTION OBJECT IN VEHICLE LANE",
+        "distance_m": 13.7,
+        "ttc_s": 29.95,
+        "confidence": 0.51,
+        "boxes": [
+          {
+            "x": 42.4,
+            "y": 49.6,
+            "w": 2.1,
+            "h": 11.4,
+            "tag": "person 51%"
+          }
+        ]
+      },
+      {
+        "t": "00:13",
+        "pct": 16.3,
+        "level": "WARNING",
+        "object": "person",
+        "label": "Slow Down Hazard Ahead",
+        "action": "SLOW DOWN HAZARD AHEAD",
+        "distance_m": 12.8,
+        "ttc_s": 2.0,
+        "confidence": 0.56,
+        "boxes": [
+          {
+            "x": 41.5,
+            "y": 49.6,
+            "w": 2.1,
+            "h": 12.1,
+            "tag": "person 56%"
+          }
+        ]
+      },
+      {
+        "t": "00:16",
+        "pct": 19.6,
+        "level": "WARNING",
+        "object": "person",
+        "label": "Slow Down Hazard Ahead",
+        "action": "SLOW DOWN HAZARD AHEAD",
+        "distance_m": 6.2,
+        "ttc_s": 1.8,
+        "confidence": 0.6,
+        "boxes": [
+          {
+            "x": 39.6,
+            "y": 43.6,
+            "w": 4.6,
+            "h": 21.8,
+            "tag": "person 60%"
+          }
+        ]
+      },
+      {
+        "t": "00:17",
+        "pct": 20.8,
+        "level": "CRITICAL",
+        "object": "bicycle",
+        "label": "Brake Now Object Too Close",
+        "action": "BRAKE NOW OBJECT TOO CLOSE",
+        "distance_m": 7.5,
+        "ttc_s": 1.28,
+        "confidence": 0.67,
+        "boxes": [
+          {
+            "x": 35.8,
+            "y": 50.6,
+            "w": 4.5,
+            "h": 19.3,
+            "tag": "bicycle 67%"
+          }
+        ]
+      },
+      {
+        "t": "00:19",
+        "pct": 23.2,
+        "level": "WARNING",
+        "object": "bicycle",
+        "label": "Slow Down And Increase Following Distance",
+        "action": "SLOW DOWN AND INCREASE FOLLOWING DISTANCE",
+        "distance_m": 3.1,
+        "ttc_s": 3.51,
+        "confidence": 0.54,
+        "boxes": [
+          {
+            "x": 22.7,
+            "y": 53.9,
+            "w": 11.6,
+            "h": 24.9,
+            "tag": "bicycle 54%"
+          }
+        ]
+      },
+      {
+        "t": "00:21",
+        "pct": 25.7,
+        "level": "WARNING",
+        "object": "bicycle",
+        "label": "Slow Down And Increase Following Distance",
+        "action": "SLOW DOWN AND INCREASE FOLLOWING DISTANCE",
+        "distance_m": 3.6,
+        "ttc_s": 2.0,
+        "confidence": 0.73,
+        "boxes": [
+          {
+            "x": 24.5,
+            "y": 54.2,
+            "w": 9.9,
+            "h": 26.9,
+            "tag": "bicycle 73%"
+          }
+        ]
+      },
+      {
+        "t": "00:38",
+        "pct": 46.6,
+        "level": "WARNING",
+        "object": "bicycle",
+        "label": "Slow Down And Increase Following Distance",
+        "action": "SLOW DOWN AND INCREASE FOLLOWING DISTANCE",
+        "distance_m": 7.0,
+        "ttc_s": null,
+        "confidence": 0.74,
+        "boxes": [
+          {
+            "x": 36.0,
+            "y": 58.8,
+            "w": 4.6,
+            "h": 17.5,
+            "tag": "bicycle 74%"
+          }
+        ]
+      },
+      {
+        "t": "00:44",
+        "pct": 53.1,
+        "level": "CRITICAL",
+        "object": "bicycle",
+        "label": "Brake Now Object Too Close",
+        "action": "BRAKE NOW OBJECT TOO CLOSE",
+        "distance_m": 2.3,
+        "ttc_s": null,
+        "confidence": 0.53,
+        "boxes": [
+          {
+            "x": 13.1,
+            "y": 58.8,
+            "w": 13.3,
+            "h": 30.0,
+            "tag": "bicycle 53%"
+          }
+        ]
+      },
+      {
+        "t": "00:53",
+        "pct": 64.4,
+        "level": "WARNING",
+        "object": "person",
+        "label": "Slow Down Hazard Ahead",
+        "action": "SLOW DOWN HAZARD AHEAD",
+        "distance_m": 14.2,
+        "ttc_s": 2.54,
+        "confidence": 0.55,
+        "boxes": [
+          {
+            "x": 46.8,
+            "y": 48.9,
+            "w": 2.0,
+            "h": 8.6,
+            "tag": "person 55%"
+          }
+        ]
+      },
+      {
+        "t": "01:00",
+        "pct": 72.6,
+        "level": "WARNING",
+        "object": "person",
+        "label": "Slow Down Hazard Ahead",
+        "action": "SLOW DOWN HAZARD AHEAD",
+        "distance_m": 6.2,
+        "ttc_s": 1.51,
+        "confidence": 0.65,
+        "boxes": [
+          {
+            "x": 40.1,
+            "y": 46.4,
+            "w": 4.5,
+            "h": 15.6,
+            "tag": "person 65%"
+          }
+        ]
+      },
+      {
+        "t": "01:02",
+        "pct": 75.1,
+        "level": "CRITICAL",
+        "object": "bicycle",
+        "label": "Brake Now Object Too Close",
+        "action": "BRAKE NOW OBJECT TOO CLOSE",
+        "distance_m": 2.5,
+        "ttc_s": 8.34,
+        "confidence": 0.8,
+        "boxes": [
+          {
+            "x": 18.5,
+            "y": 59.7,
+            "w": 13.3,
+            "h": 31.8,
+            "tag": "bicycle 80%"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "video_10",
+    "title": "Road Video 11.Mp4 - Copy",
+    "file": "road_video_11.mp4 - Copy_processed.mp4",
+    "raw": "road_video_11.mp4 - Copy.mp4",
+    "thumb": "road_video_11.mp4 - Copy_thumb.jpg",
+    "location": "Untagged route",
+    "weather": "Unknown",
+    "duration": "01:16",
+    "frames": 2291,
+    "source_fps": 30.0,
+    "total_detections": 12116,
+    "incidents": 55,
+    "minimum_ttc_s": 0.108,
+    "average_processing_fps": 3.35,
+    "risk_counts": {
+      "SAFE": 10284,
+      "WARNING": 1102,
+      "CRITICAL": 256,
+      "CAUTION": 474
+    },
+    "object_counts": {
+      "car": 8593,
+      "truck": 162,
+      "traffic light": 3285,
+      "bus": 71,
+      "person": 5
+    },
+    "overall_risk": "CAUTION",
+    "events": [
+      {
+        "t": "00:00",
+        "pct": 0.1,
+        "level": "WARNING",
+        "object": "car",
+        "label": "Slow Down And Increase Following Distance",
+        "action": "SLOW DOWN AND INCREASE FOLLOWING DISTANCE",
+        "distance_m": 4.8,
+        "ttc_s": null,
+        "confidence": 0.71,
+        "boxes": [
+          {
+            "x": 47.7,
+            "y": 48.2,
+            "w": 20.8,
+            "h": 31.1,
+            "tag": "car 71%"
+          }
+        ]
+      },
+      {
+        "t": "00:00",
+        "pct": 0.2,
+        "level": "CRITICAL",
+        "object": "car",
+        "label": "Brake Now Object Too Close",
+        "action": "BRAKE NOW OBJECT TOO CLOSE",
+        "distance_m": 2.7,
+        "ttc_s": null,
+        "confidence": 0.87,
+        "boxes": [
+          {
+            "x": 0.1,
+            "y": 37.2,
+            "w": 36.3,
+            "h": 61.8,
+            "tag": "car 87%"
+          }
+        ]
+      },
+      {
+        "t": "00:02",
+        "pct": 2.8,
+        "level": "WARNING",
+        "object": "car",
+        "label": "Slow Down And Increase Following Distance",
+        "action": "SLOW DOWN AND INCREASE FOLLOWING DISTANCE",
+        "distance_m": 4.8,
+        "ttc_s": null,
+        "confidence": 0.56,
+        "boxes": [
+          {
+            "x": 48.7,
+            "y": 46.2,
+            "w": 20.6,
+            "h": 31.8,
+            "tag": "car 56%"
+          }
+        ]
+      },
+      {
+        "t": "00:04",
+        "pct": 5.4,
+        "level": "CRITICAL",
+        "object": "car",
+        "label": "Brake Now Object Too Close",
+        "action": "BRAKE NOW OBJECT TOO CLOSE",
+        "distance_m": 2.8,
+        "ttc_s": null,
+        "confidence": 0.77,
+        "boxes": [
+          {
+            "x": 0.0,
+            "y": 36.5,
+            "w": 35.8,
+            "h": 62.4,
+            "tag": "car 77%"
+          }
+        ]
+      },
+      {
+        "t": "00:06",
+        "pct": 8.1,
+        "level": "CRITICAL",
+        "object": "car",
+        "label": "Brake Now Object Too Close",
+        "action": "BRAKE NOW OBJECT TOO CLOSE",
+        "distance_m": 2.4,
+        "ttc_s": 10.42,
+        "confidence": 0.88,
+        "boxes": [
+          {
+            "x": 0.0,
+            "y": 42.4,
+            "w": 41.8,
+            "h": 42.2,
+            "tag": "car 88%"
+          }
+        ]
+      },
+      {
+        "t": "00:08",
+        "pct": 10.8,
+        "level": "WARNING",
+        "object": "car",
+        "label": "Slow Down And Increase Following Distance",
+        "action": "SLOW DOWN AND INCREASE FOLLOWING DISTANCE",
+        "distance_m": 3.5,
+        "ttc_s": null,
+        "confidence": 0.88,
+        "boxes": [
+          {
+            "x": 23.6,
+            "y": 44.0,
+            "w": 28.0,
+            "h": 31.4,
+            "tag": "car 88%"
+          }
+        ]
+      },
+      {
+        "t": "00:10",
+        "pct": 13.4,
+        "level": "WARNING",
+        "object": "car",
+        "label": "Slow Down And Increase Following Distance",
+        "action": "SLOW DOWN AND INCREASE FOLLOWING DISTANCE",
+        "distance_m": 4.5,
+        "ttc_s": null,
+        "confidence": 0.83,
+        "boxes": [
+          {
+            "x": 39.0,
+            "y": 46.7,
+            "w": 22.3,
+            "h": 30.0,
+            "tag": "car 83%"
+          }
+        ]
+      },
+      {
+        "t": "00:12",
+        "pct": 16.0,
+        "level": "WARNING",
+        "object": "car",
+        "label": "Slow Down And Increase Following Distance",
+        "action": "SLOW DOWN AND INCREASE FOLLOWING DISTANCE",
+        "distance_m": 5.3,
+        "ttc_s": null,
+        "confidence": 0.87,
+        "boxes": [
+          {
+            "x": 45.2,
+            "y": 47.9,
+            "w": 18.2,
+            "h": 28.6,
+            "tag": "car 87%"
+          }
+        ]
+      },
+      {
+        "t": "00:15",
+        "pct": 20.0,
+        "level": "WARNING",
+        "object": "car",
+        "label": "Slow Down And Increase Following Distance",
+        "action": "SLOW DOWN AND INCREASE FOLLOWING DISTANCE",
+        "distance_m": 12.0,
+        "ttc_s": 2.61,
+        "confidence": 0.73,
+        "boxes": [
+          {
+            "x": 37.0,
+            "y": 53.5,
+            "w": 11.9,
+            "h": 14.3,
+            "tag": "car 73%"
+          }
+        ]
+      },
+      {
+        "t": "00:17",
+        "pct": 22.7,
+        "level": "CRITICAL",
+        "object": "car",
+        "label": "Brake Now Object Too Close",
+        "action": "BRAKE NOW OBJECT TOO CLOSE",
+        "distance_m": 2.3,
+        "ttc_s": null,
+        "confidence": 0.94,
+        "boxes": [
+          {
+            "x": 0.0,
+            "y": 52.4,
+            "w": 41.8,
+            "h": 46.8,
+            "tag": "car 94%"
+          }
+        ]
+      },
+      {
+        "t": "00:19",
+        "pct": 25.3,
+        "level": "CRITICAL",
+        "object": "car",
+        "label": "Brake Now Object Too Close",
+        "action": "BRAKE NOW OBJECT TOO CLOSE",
+        "distance_m": 2.9,
+        "ttc_s": null,
+        "confidence": 0.93,
+        "boxes": [
+          {
+            "x": 0.0,
+            "y": 57.1,
+            "w": 33.2,
+            "h": 41.9,
+            "tag": "car 93%"
+          }
+        ]
+      },
+      {
+        "t": "00:22",
+        "pct": 28.5,
+        "level": "WARNING",
+        "object": "car",
+        "label": "Slow Down And Increase Following Distance",
+        "action": "SLOW DOWN AND INCREASE FOLLOWING DISTANCE",
+        "distance_m": 19.9,
+        "ttc_s": 2.72,
+        "confidence": 0.6,
+        "boxes": [
+          {
+            "x": 39.9,
+            "y": 53.6,
+            "w": 5.0,
+            "h": 6.8,
+            "tag": "car 60%"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "video_11",
     "title": "Multi-Vehicle Collision Risk and Safety Analysis",
     "file": "road_video_2.mp4_processed.mp4",
+    "raw": "road_video_2.mp4.MP4",
     "thumb": "road_video_2.mp4_thumb.jpg",
     "location": "Two-lane residential",
     "weather": "Clear",
     "duration": "00:28",
     "frames": 834,
     "source_fps": 29.987415,
-    "total_detections": 3371,
-    "incidents": 39,
+    "total_detections": 3363,
+    "incidents": 41,
     "minimum_ttc_s": 0.325,
-    "average_processing_fps": 29.83,
+    "average_processing_fps": 3.49,
     "risk_counts": {
-      "SAFE": 2821,
-      "CAUTION": 248,
-      "WARNING": 157,
-      "CRITICAL": 145
+      "SAFE": 2796,
+      "CAUTION": 249,
+      "WARNING": 166,
+      "CRITICAL": 152
     },
     "object_counts": {
-      "car": 2952,
+      "car": 2946,
       "motorcycle": 21,
       "person": 8,
-      "truck": 228,
-      "bus": 157,
+      "truck": 225,
+      "bus": 158,
       "stop sign": 5
     },
     "overall_risk": "CAUTION",
@@ -171,7 +2406,7 @@ export const VIDEOS = [
         "object": "car",
         "label": "Object At Safe Distance",
         "action": "OBJECT AT SAFE DISTANCE",
-        "distance_m": 51.5,
+        "distance_m": 52.8,
         "ttc_s": null,
         "confidence": 0.51,
         "boxes": [
@@ -191,8 +2426,8 @@ export const VIDEOS = [
         "object": "car",
         "label": "Caution Object In Vehicle Lane",
         "action": "CAUTION OBJECT IN VEHICLE LANE",
-        "distance_m": 46.3,
-        "ttc_s": 5.0,
+        "distance_m": 45.9,
+        "ttc_s": 4.8,
         "confidence": 0.59,
         "boxes": [
           {
@@ -211,55 +2446,75 @@ export const VIDEOS = [
         "object": "car",
         "label": "Slow Down And Increase Following Distance",
         "action": "SLOW DOWN AND INCREASE FOLLOWING DISTANCE",
-        "distance_m": 44.0,
-        "ttc_s": 2.45,
+        "distance_m": 46.0,
+        "ttc_s": 2.58,
         "confidence": 0.61,
         "boxes": [
           {
-            "x": 37.5,
+            "x": 37.6,
             "y": 60.5,
-            "w": 3.5,
+            "w": 3.4,
             "h": 2.7,
             "tag": "car 61%"
           }
         ]
       },
       {
-        "t": "00:03",
-        "pct": 9.7,
+        "t": "00:02",
+        "pct": 7.3,
         "level": "CRITICAL",
         "object": "car",
         "label": "Brake Now Object Too Close",
         "action": "BRAKE NOW OBJECT TOO CLOSE",
-        "distance_m": 32.7,
-        "ttc_s": 1.39,
-        "confidence": 0.61,
+        "distance_m": 42.1,
+        "ttc_s": 1.43,
+        "confidence": 0.52,
         "boxes": [
           {
-            "x": 43.3,
-            "y": 61.1,
-            "w": 4.8,
-            "h": 3.2,
-            "tag": "car 61%"
+            "x": 37.6,
+            "y": 60.7,
+            "w": 3.8,
+            "h": 2.7,
+            "tag": "car 52%"
+          }
+        ]
+      },
+      {
+        "t": "00:04",
+        "pct": 14.5,
+        "level": "CRITICAL",
+        "object": "car",
+        "label": "Brake Now Object Too Close",
+        "action": "BRAKE NOW OBJECT TOO CLOSE",
+        "distance_m": 12.9,
+        "ttc_s": 0.77,
+        "confidence": 0.89,
+        "boxes": [
+          {
+            "x": 36.8,
+            "y": 61.6,
+            "w": 11.7,
+            "h": 10.3,
+            "tag": "car 89%"
           }
         ]
       },
       {
         "t": "00:06",
-        "pct": 21.2,
+        "pct": 21.7,
         "level": "CRITICAL",
         "object": "car",
         "label": "Brake Now Object Too Close",
         "action": "BRAKE NOW OBJECT TOO CLOSE",
-        "distance_m": 5.5,
-        "ttc_s": 0.57,
+        "distance_m": 4.4,
+        "ttc_s": 0.38,
         "confidence": 0.94,
         "boxes": [
           {
-            "x": 68.0,
-            "y": 60.3,
-            "w": 31.8,
-            "h": 26.1,
+            "x": 59.3,
+            "y": 61.6,
+            "w": 36.7,
+            "h": 25.6,
             "tag": "car 94%"
           }
         ]
@@ -271,56 +2526,56 @@ export const VIDEOS = [
         "object": "car",
         "label": "Slow Down And Increase Following Distance",
         "action": "SLOW DOWN AND INCREASE FOLLOWING DISTANCE",
-        "distance_m": 32.7,
-        "ttc_s": 2.34,
-        "confidence": 0.53,
+        "distance_m": 32.9,
+        "ttc_s": 2.77,
+        "confidence": 0.54,
         "boxes": [
           {
             "x": 33.6,
             "y": 61.1,
             "w": 5.9,
-            "h": 4.8,
-            "tag": "car 53%"
+            "h": 5.0,
+            "tag": "car 54%"
           }
         ]
       },
       {
-        "t": "00:11",
-        "pct": 38.0,
+        "t": "00:10",
+        "pct": 37.6,
         "level": "WARNING",
         "object": "car",
         "label": "Slow Down And Increase Following Distance",
         "action": "SLOW DOWN AND INCREASE FOLLOWING DISTANCE",
-        "distance_m": 6.3,
-        "ttc_s": 13.52,
-        "confidence": 0.8,
+        "distance_m": 9.7,
+        "ttc_s": 2.26,
+        "confidence": 0.91,
         "boxes": [
           {
-            "x": 27.2,
-            "y": 61.1,
-            "w": 23.2,
-            "h": 17.9,
-            "tag": "car 80%"
+            "x": 30.2,
+            "y": 60.7,
+            "w": 25.0,
+            "h": 18.9,
+            "tag": "car 91%"
           }
         ]
       },
       {
-        "t": "00:13",
-        "pct": 45.2,
+        "t": "00:12",
+        "pct": 44.8,
         "level": "WARNING",
         "object": "car",
         "label": "Slow Down And Increase Following Distance",
         "action": "SLOW DOWN AND INCREASE FOLLOWING DISTANCE",
         "distance_m": 6.0,
-        "ttc_s": 8.06,
-        "confidence": 0.9,
+        "ttc_s": 2.83,
+        "confidence": 0.87,
         "boxes": [
           {
-            "x": 55.1,
-            "y": 63.2,
-            "w": 24.5,
-            "h": 17.9,
-            "tag": "car 90%"
+            "x": 59.2,
+            "y": 62.8,
+            "w": 24.9,
+            "h": 18.3,
+            "tag": "car 87%"
           }
         ]
       },
@@ -331,8 +2586,8 @@ export const VIDEOS = [
         "object": "car",
         "label": "Slow Down And Increase Following Distance",
         "action": "SLOW DOWN AND INCREASE FOLLOWING DISTANCE",
-        "distance_m": 24.6,
-        "ttc_s": 2.2,
+        "distance_m": 24.8,
+        "ttc_s": 2.12,
         "confidence": 0.75,
         "boxes": [
           {
@@ -345,72 +2600,52 @@ export const VIDEOS = [
         ]
       },
       {
-        "t": "00:18",
-        "pct": 63.5,
+        "t": "00:17",
+        "pct": 61.9,
         "level": "WARNING",
         "object": "car",
         "label": "Slow Down And Increase Following Distance",
         "action": "SLOW DOWN AND INCREASE FOLLOWING DISTANCE",
-        "distance_m": 29.4,
-        "ttc_s": 2.41,
-        "confidence": 0.76,
+        "distance_m": 33.8,
+        "ttc_s": 2.72,
+        "confidence": 0.8,
         "boxes": [
           {
-            "x": 42.8,
-            "y": 61.8,
-            "w": 5.1,
-            "h": 6.1,
-            "tag": "car 76%"
+            "x": 46.9,
+            "y": 62.0,
+            "w": 4.7,
+            "h": 6.3,
+            "tag": "car 80%"
           }
         ]
       },
       {
-        "t": "00:20",
-        "pct": 70.7,
-        "level": "WARNING",
-        "object": "truck",
-        "label": "Slow Down And Increase Following Distance",
-        "action": "SLOW DOWN AND INCREASE FOLLOWING DISTANCE",
-        "distance_m": 12.1,
-        "ttc_s": 2.56,
-        "confidence": 0.63,
-        "boxes": [
-          {
-            "x": 26.5,
-            "y": 54.2,
-            "w": 17.7,
-            "h": 14.7,
-            "tag": "truck 63%"
-          }
-        ]
-      },
-      {
-        "t": "00:22",
-        "pct": 79.4,
+        "t": "00:19",
+        "pct": 69.3,
         "level": "CRITICAL",
-        "object": "bus",
+        "object": "car",
         "label": "Brake Now Object Too Close",
         "action": "BRAKE NOW OBJECT TOO CLOSE",
-        "distance_m": 4.6,
-        "ttc_s": 4.12,
-        "confidence": 0.93,
+        "distance_m": 26.2,
+        "ttc_s": 1.41,
+        "confidence": 0.56,
         "boxes": [
           {
-            "x": 0.0,
-            "y": 33.0,
-            "w": 45.4,
-            "h": 53.2,
-            "tag": "bus 93%"
+            "x": 49.9,
+            "y": 59.9,
+            "w": 6.4,
+            "h": 4.0,
+            "tag": "car 56%"
           }
         ]
       }
     ]
   },
   {
-    "id": "video_3",
-    "raw": "road_video_3.mp4.mp4",
+    "id": "video_12",
     "title": "Pothole and Road-Surface Hazard Detection",
     "file": "road_video_3.mp4_processed.mp4",
+    "raw": "road_video_3.mp4.mp4",
     "thumb": "road_video_3.mp4_thumb.jpg",
     "location": "Dual carriageway",
     "weather": "Night, dry",
@@ -418,13 +2653,13 @@ export const VIDEOS = [
     "frames": 692,
     "source_fps": 25.0,
     "total_detections": 275,
-    "incidents": 29,
-    "minimum_ttc_s": 0.219,
-    "average_processing_fps": 27.02,
+    "incidents": 30,
+    "minimum_ttc_s": 0.613,
+    "average_processing_fps": 3.51,
     "risk_counts": {
-      "WARNING": 26,
-      "CRITICAL": 58,
-      "SAFE": 191
+      "WARNING": 29,
+      "CRITICAL": 54,
+      "SAFE": 192
     },
     "object_counts": {
       "pothole": 275
@@ -438,16 +2673,16 @@ export const VIDEOS = [
         "object": "pothole",
         "label": "Slow Down And Prepare To Avoid Road Damage",
         "action": "SLOW DOWN AND PREPARE TO AVOID ROAD DAMAGE",
-        "distance_m": 5.6,
+        "distance_m": 5.7,
         "ttc_s": null,
-        "confidence": 0.33,
+        "confidence": 0.32,
         "boxes": [
           {
-            "x": 58.4,
+            "x": 58.5,
             "y": 52.1,
-            "w": 7.0,
-            "h": 9.3,
-            "tag": "pothole 33%"
+            "w": 6.9,
+            "h": 9.2,
+            "tag": "pothole 32%"
           }
         ]
       },
@@ -460,14 +2695,14 @@ export const VIDEOS = [
         "action": "BRAKE AND AVOID ROAD DAMAGE",
         "distance_m": 0.9,
         "ttc_s": null,
-        "confidence": 0.35,
+        "confidence": 0.33,
         "boxes": [
           {
             "x": 0.0,
-            "y": 42.6,
+            "y": 42.9,
             "w": 48.0,
-            "h": 41.4,
-            "tag": "pothole 35%"
+            "h": 40.6,
+            "tag": "pothole 33%"
           }
         ]
       },
@@ -479,7 +2714,7 @@ export const VIDEOS = [
         "label": "Brake And Avoid Road Damage",
         "action": "BRAKE AND AVOID ROAD DAMAGE",
         "distance_m": 3.0,
-        "ttc_s": 1.3,
+        "ttc_s": 1.29,
         "confidence": 0.68,
         "boxes": [
           {
@@ -493,41 +2728,61 @@ export const VIDEOS = [
       },
       {
         "t": "00:05",
-        "pct": 19.7,
-        "level": "WARNING",
+        "pct": 17.4,
+        "level": "CRITICAL",
         "object": "pothole",
-        "label": "Slow Down And Prepare To Avoid Road Damage",
-        "action": "SLOW DOWN AND PREPARE TO AVOID ROAD DAMAGE",
-        "distance_m": 3.5,
-        "ttc_s": null,
-        "confidence": 0.38,
+        "label": "Brake And Avoid Road Damage",
+        "action": "BRAKE AND AVOID ROAD DAMAGE",
+        "distance_m": 2.9,
+        "ttc_s": 0.61,
+        "confidence": 0.31,
         "boxes": [
           {
-            "x": 70.9,
-            "y": 70.3,
-            "w": 13.1,
-            "h": 13.2,
-            "tag": "pothole 38%"
+            "x": 65.1,
+            "y": 60.0,
+            "w": 16.6,
+            "h": 17.9,
+            "tag": "pothole 31%"
+          }
+        ]
+      },
+      {
+        "t": "00:06",
+        "pct": 22.6,
+        "level": "CRITICAL",
+        "object": "pothole",
+        "label": "Brake And Avoid Road Damage",
+        "action": "BRAKE AND AVOID ROAD DAMAGE",
+        "distance_m": 1.9,
+        "ttc_s": 3.78,
+        "confidence": 0.56,
+        "boxes": [
+          {
+            "x": 0.6,
+            "y": 70.0,
+            "w": 23.0,
+            "h": 25.1,
+            "tag": "pothole 56%"
           }
         ]
       },
       {
         "t": "00:08",
-        "pct": 29.6,
+        "pct": 30.0,
         "level": "CRITICAL",
         "object": "pothole",
         "label": "Brake And Avoid Road Damage",
         "action": "BRAKE AND AVOID ROAD DAMAGE",
-        "distance_m": 1.8,
-        "ttc_s": null,
-        "confidence": 0.46,
+        "distance_m": 1.7,
+        "ttc_s": 0.89,
+        "confidence": 0.52,
         "boxes": [
           {
-            "x": 19.5,
-            "y": 46.8,
-            "w": 25.2,
-            "h": 14.7,
-            "tag": "pothole 46%"
+            "x": 18.2,
+            "y": 47.9,
+            "w": 26.2,
+            "h": 17.2,
+            "tag": "pothole 52%"
           }
         ]
       },
@@ -540,14 +2795,14 @@ export const VIDEOS = [
         "action": "BRAKE AND AVOID ROAD DAMAGE",
         "distance_m": 1.4,
         "ttc_s": null,
-        "confidence": 0.46,
+        "confidence": 0.45,
         "boxes": [
           {
             "x": 0.1,
-            "y": 48.6,
-            "w": 30.5,
-            "h": 50.6,
-            "tag": "pothole 46%"
+            "y": 48.5,
+            "w": 30.3,
+            "h": 50.8,
+            "tag": "pothole 45%"
           }
         ]
       },
@@ -560,14 +2815,14 @@ export const VIDEOS = [
         "action": "BRAKE AND AVOID ROAD DAMAGE",
         "distance_m": 2.5,
         "ttc_s": null,
-        "confidence": 0.33,
+        "confidence": 0.34,
         "boxes": [
           {
-            "x": 20.9,
+            "x": 21.0,
             "y": 58.1,
-            "w": 17.8,
+            "w": 17.7,
             "h": 13.3,
-            "tag": "pothole 33%"
+            "tag": "pothole 34%"
           }
         ]
       },
@@ -578,15 +2833,15 @@ export const VIDEOS = [
         "object": "pothole",
         "label": "Brake And Avoid Road Damage",
         "action": "BRAKE AND AVOID ROAD DAMAGE",
-        "distance_m": 1.7,
-        "ttc_s": 1.14,
+        "distance_m": 1.6,
+        "ttc_s": 1.12,
         "confidence": 0.54,
         "boxes": [
           {
-            "x": 6.0,
-            "y": 63.2,
-            "w": 28.0,
-            "h": 18.8,
+            "x": 5.9,
+            "y": 63.5,
+            "w": 28.4,
+            "h": 17.6,
             "tag": "pothole 54%"
           }
         ]
@@ -600,14 +2855,14 @@ export const VIDEOS = [
         "action": "BRAKE AND AVOID ROAD DAMAGE",
         "distance_m": 3.0,
         "ttc_s": 1.15,
-        "confidence": 0.34,
+        "confidence": 0.32,
         "boxes": [
           {
             "x": 52.0,
-            "y": 47.5,
+            "y": 47.4,
             "w": 14.9,
-            "h": 12.4,
-            "tag": "pothole 34%"
+            "h": 12.5,
+            "tag": "pothole 32%"
           }
         ]
       },
@@ -618,7 +2873,7 @@ export const VIDEOS = [
         "object": "pothole",
         "label": "Slow Down And Prepare To Avoid Road Damage",
         "action": "SLOW DOWN AND PREPARE TO AVOID ROAD DAMAGE",
-        "distance_m": 3.8,
+        "distance_m": 3.5,
         "ttc_s": null,
         "confidence": 0.5,
         "boxes": [
@@ -628,1046 +2883,6 @@ export const VIDEOS = [
             "w": 11.6,
             "h": 9.3,
             "tag": "pothole 50%"
-          }
-        ]
-      }
-    ]
-  },
-  {
-    "id": "video_4",
-    "raw": "road_video_4.mp4",
-    "title": "Road Video 4",
-    "file": "road_video_4_processed.mp4",
-    "thumb": "road_video_4_thumb.jpg",
-    "location": "Untagged route",
-    "weather": "Unknown",
-    "duration": "00:14",
-    "frames": 410,
-    "source_fps": 29.97003,
-    "total_detections": 2309,
-    "incidents": 11,
-    "minimum_ttc_s": 0.267,
-    "average_processing_fps": 21.39,
-    "risk_counts": {
-      "SAFE": 2251,
-      "WARNING": 26,
-      "CAUTION": 21,
-      "CRITICAL": 11
-    },
-    "object_counts": {
-      "car": 2032,
-      "truck": 89,
-      "person": 76,
-      "bus": 5,
-      "traffic light": 107
-    },
-    "overall_risk": "SAFE",
-    "events": [
-      {
-        "t": "00:00",
-        "pct": 0.5,
-        "level": "SAFE",
-        "object": "car",
-        "label": "Object Outside Vehicle Lane",
-        "action": "OBJECT OUTSIDE VEHICLE LANE",
-        "distance_m": 8.9,
-        "ttc_s": null,
-        "confidence": 0.92,
-        "boxes": [
-          {
-            "x": 16.1,
-            "y": 56.9,
-            "w": 20.7,
-            "h": 11.4,
-            "tag": "car 92%"
-          }
-        ]
-      },
-      {
-        "t": "00:02",
-        "pct": 14.9,
-        "level": "WARNING",
-        "object": "car",
-        "label": "Slow Down And Increase Following Distance",
-        "action": "SLOW DOWN AND INCREASE FOLLOWING DISTANCE",
-        "distance_m": 3.1,
-        "ttc_s": null,
-        "confidence": 0.52,
-        "boxes": [
-          {
-            "x": 24.7,
-            "y": 75.0,
-            "w": 54.2,
-            "h": 3.1,
-            "tag": "car 52%"
-          }
-        ]
-      },
-      {
-        "t": "00:06",
-        "pct": 41.0,
-        "level": "CRITICAL",
-        "object": "truck",
-        "label": "Brake Now Object Too Close",
-        "action": "BRAKE NOW OBJECT TOO CLOSE",
-        "distance_m": 7.7,
-        "ttc_s": 0.28,
-        "confidence": 0.93,
-        "boxes": [
-          {
-            "x": 65.4,
-            "y": 47.4,
-            "w": 34.4,
-            "h": 29.4,
-            "tag": "truck 93%"
-          }
-        ]
-      },
-      {
-        "t": "00:09",
-        "pct": 68.3,
-        "level": "CRITICAL",
-        "object": "car",
-        "label": "Brake Now Object Too Close",
-        "action": "BRAKE NOW OBJECT TOO CLOSE",
-        "distance_m": 40.2,
-        "ttc_s": 1.23,
-        "confidence": 0.83,
-        "boxes": [
-          {
-            "x": 57.9,
-            "y": 56.4,
-            "w": 4.6,
-            "h": 3.2,
-            "tag": "car 83%"
-          }
-        ]
-      },
-      {
-        "t": "00:12",
-        "pct": 85.9,
-        "level": "WARNING",
-        "object": "car",
-        "label": "Slow Down And Increase Following Distance",
-        "action": "SLOW DOWN AND INCREASE FOLLOWING DISTANCE",
-        "distance_m": 39.2,
-        "ttc_s": 2.78,
-        "confidence": 0.57,
-        "boxes": [
-          {
-            "x": 51.9,
-            "y": 55.7,
-            "w": 4.4,
-            "h": 2.1,
-            "tag": "car 57%"
-          }
-        ]
-      }
-    ]
-  },
-  {
-    "id": "video_5",
-    "raw": "road_video_5.mp4",
-    "title": "Road Video 5",
-    "file": "road_video_5_processed.mp4",
-    "thumb": "road_video_5_thumb.jpg",
-    "location": "Untagged route",
-    "weather": "Unknown",
-    "duration": "00:20",
-    "frames": 612,
-    "source_fps": 29.97003,
-    "total_detections": 3170,
-    "incidents": 15,
-    "minimum_ttc_s": 0.395,
-    "average_processing_fps": 22.05,
-    "risk_counts": {
-      "SAFE": 2665,
-      "WARNING": 117,
-      "CRITICAL": 24,
-      "CAUTION": 364
-    },
-    "object_counts": {
-      "person": 693,
-      "car": 2335,
-      "truck": 11,
-      "motorcycle": 21,
-      "bicycle": 109,
-      "bus": 1
-    },
-    "overall_risk": "CAUTION",
-    "events": [
-      {
-        "t": "00:00",
-        "pct": 0.3,
-        "level": "SAFE",
-        "object": "car",
-        "label": "Object At Safe Distance",
-        "action": "OBJECT AT SAFE DISTANCE",
-        "distance_m": 18.6,
-        "ttc_s": null,
-        "confidence": 0.82,
-        "boxes": [
-          {
-            "x": 44.0,
-            "y": 54.6,
-            "w": 9.6,
-            "h": 8.2,
-            "tag": "car 82%"
-          }
-        ]
-      },
-      {
-        "t": "00:01",
-        "pct": 6.0,
-        "level": "WARNING",
-        "object": "car",
-        "label": "Slow Down And Increase Following Distance",
-        "action": "SLOW DOWN AND INCREASE FOLLOWING DISTANCE",
-        "distance_m": 14.6,
-        "ttc_s": 1.62,
-        "confidence": 0.82,
-        "boxes": [
-          {
-            "x": 56.2,
-            "y": 53.5,
-            "w": 12.6,
-            "h": 10.0,
-            "tag": "car 82%"
-          }
-        ]
-      },
-      {
-        "t": "00:01",
-        "pct": 6.5,
-        "level": "CRITICAL",
-        "object": "car",
-        "label": "Brake Now Object Too Close",
-        "action": "BRAKE NOW OBJECT TOO CLOSE",
-        "distance_m": 13.4,
-        "ttc_s": 1.33,
-        "confidence": 0.75,
-        "boxes": [
-          {
-            "x": 56.8,
-            "y": 53.3,
-            "w": 13.9,
-            "h": 10.8,
-            "tag": "car 75%"
-          }
-        ]
-      },
-      {
-        "t": "00:06",
-        "pct": 27.5,
-        "level": "WARNING",
-        "object": "person",
-        "label": "Slow Down Hazard Ahead",
-        "action": "SLOW DOWN HAZARD AHEAD",
-        "distance_m": 24.8,
-        "ttc_s": 1.66,
-        "confidence": 0.61,
-        "boxes": [
-          {
-            "x": 41.0,
-            "y": 53.5,
-            "w": 2.1,
-            "h": 5.1,
-            "tag": "person 61%"
-          }
-        ]
-      },
-      {
-        "t": "00:08",
-        "pct": 39.7,
-        "level": "WARNING",
-        "object": "car",
-        "label": "Slow Down And Increase Following Distance",
-        "action": "SLOW DOWN AND INCREASE FOLLOWING DISTANCE",
-        "distance_m": 36.3,
-        "ttc_s": 1.98,
-        "confidence": 0.66,
-        "boxes": [
-          {
-            "x": 56.0,
-            "y": 54.9,
-            "w": 5.0,
-            "h": 5.7,
-            "tag": "car 66%"
-          }
-        ]
-      },
-      {
-        "t": "00:11",
-        "pct": 55.9,
-        "level": "WARNING",
-        "object": "car",
-        "label": "Slow Down And Increase Following Distance",
-        "action": "SLOW DOWN AND INCREASE FOLLOWING DISTANCE",
-        "distance_m": 45.3,
-        "ttc_s": 2.57,
-        "confidence": 0.7,
-        "boxes": [
-          {
-            "x": 55.6,
-            "y": 55.1,
-            "w": 3.9,
-            "h": 3.1,
-            "tag": "car 70%"
-          }
-        ]
-      },
-      {
-        "t": "00:13",
-        "pct": 65.7,
-        "level": "WARNING",
-        "object": "car",
-        "label": "Slow Down And Increase Following Distance",
-        "action": "SLOW DOWN AND INCREASE FOLLOWING DISTANCE",
-        "distance_m": 63.8,
-        "ttc_s": 2.37,
-        "confidence": 0.71,
-        "boxes": [
-          {
-            "x": 53.3,
-            "y": 55.4,
-            "w": 2.8,
-            "h": 2.1,
-            "tag": "car 71%"
-          }
-        ]
-      },
-      {
-        "t": "00:16",
-        "pct": 76.3,
-        "level": "WARNING",
-        "object": "person",
-        "label": "Slow Down Hazard Ahead",
-        "action": "SLOW DOWN HAZARD AHEAD",
-        "distance_m": 16.7,
-        "ttc_s": 2.82,
-        "confidence": 0.61,
-        "boxes": [
-          {
-            "x": 56.7,
-            "y": 54.4,
-            "w": 2.9,
-            "h": 7.4,
-            "tag": "person 61%"
-          }
-        ]
-      },
-      {
-        "t": "00:18",
-        "pct": 86.1,
-        "level": "WARNING",
-        "object": "person",
-        "label": "Slow Down Hazard Ahead",
-        "action": "SLOW DOWN HAZARD AHEAD",
-        "distance_m": 10.2,
-        "ttc_s": 1.6,
-        "confidence": 0.82,
-        "boxes": [
-          {
-            "x": 43.1,
-            "y": 53.3,
-            "w": 4.9,
-            "h": 12.4,
-            "tag": "person 82%"
-          }
-        ]
-      },
-      {
-        "t": "00:20",
-        "pct": 97.6,
-        "level": "WARNING",
-        "object": "car",
-        "label": "Slow Down And Increase Following Distance",
-        "action": "SLOW DOWN AND INCREASE FOLLOWING DISTANCE",
-        "distance_m": 19.3,
-        "ttc_s": 2.69,
-        "confidence": 0.85,
-        "boxes": [
-          {
-            "x": 55.4,
-            "y": 54.9,
-            "w": 9.4,
-            "h": 7.1,
-            "tag": "car 85%"
-          }
-        ]
-      }
-    ]
-  },
-  {
-    "id": "video_6",
-    "raw": "road_video_6.mp4",
-    "title": "Road Video 6",
-    "file": "road_video_6_processed.mp4",
-    "thumb": "road_video_6_thumb.jpg",
-    "location": "Untagged route",
-    "weather": "Unknown",
-    "duration": "00:23",
-    "frames": 701,
-    "source_fps": 29.97003,
-    "total_detections": 1251,
-    "incidents": 12,
-    "minimum_ttc_s": 0.371,
-    "average_processing_fps": 22.48,
-    "risk_counts": {
-      "WARNING": 55,
-      "SAFE": 1046,
-      "CRITICAL": 83,
-      "CAUTION": 67
-    },
-    "object_counts": {
-      "car": 726,
-      "person": 488,
-      "truck": 21,
-      "traffic light": 13,
-      "bicycle": 3
-    },
-    "overall_risk": "CAUTION",
-    "events": [
-      {
-        "t": "00:00",
-        "pct": 0.3,
-        "level": "WARNING",
-        "object": "car",
-        "label": "Slow Down And Increase Following Distance",
-        "action": "SLOW DOWN AND INCREASE FOLLOWING DISTANCE",
-        "distance_m": 6.5,
-        "ttc_s": null,
-        "confidence": 0.91,
-        "boxes": [
-          {
-            "x": 75.0,
-            "y": 59.9,
-            "w": 24.9,
-            "h": 39.9,
-            "tag": "car 91%"
-          }
-        ]
-      },
-      {
-        "t": "00:02",
-        "pct": 8.1,
-        "level": "CRITICAL",
-        "object": "car",
-        "label": "Brake Now Object Too Close",
-        "action": "BRAKE NOW OBJECT TOO CLOSE",
-        "distance_m": 33.4,
-        "ttc_s": 1.12,
-        "confidence": 0.85,
-        "boxes": [
-          {
-            "x": 52.4,
-            "y": 58.0,
-            "w": 5.4,
-            "h": 6.8,
-            "tag": "car 85%"
-          }
-        ]
-      },
-      {
-        "t": "00:04",
-        "pct": 16.7,
-        "level": "CRITICAL",
-        "object": "car",
-        "label": "Brake Now Object Too Close",
-        "action": "BRAKE NOW OBJECT TOO CLOSE",
-        "distance_m": 20.6,
-        "ttc_s": 0.65,
-        "confidence": 0.85,
-        "boxes": [
-          {
-            "x": 55.4,
-            "y": 57.5,
-            "w": 9.4,
-            "h": 12.2,
-            "tag": "car 85%"
-          }
-        ]
-      },
-      {
-        "t": "00:14",
-        "pct": 60.1,
-        "level": "CRITICAL",
-        "object": "person",
-        "label": "Brake Immediately Person Ahead",
-        "action": "BRAKE IMMEDIATELY PERSON AHEAD",
-        "distance_m": 14.1,
-        "ttc_s": 1.1,
-        "confidence": 0.63,
-        "boxes": [
-          {
-            "x": 41.4,
-            "y": 56.2,
-            "w": 3.6,
-            "h": 13.9,
-            "tag": "person 63%"
-          }
-        ]
-      },
-      {
-        "t": "00:16",
-        "pct": 69.0,
-        "level": "WARNING",
-        "object": "person",
-        "label": "Slow Down Hazard Ahead",
-        "action": "SLOW DOWN HAZARD AHEAD",
-        "distance_m": 9.2,
-        "ttc_s": 2.67,
-        "confidence": 0.71,
-        "boxes": [
-          {
-            "x": 56.5,
-            "y": 58.2,
-            "w": 5.8,
-            "h": 17.0,
-            "tag": "person 71%"
-          }
-        ]
-      },
-      {
-        "t": "00:18",
-        "pct": 78.6,
-        "level": "CRITICAL",
-        "object": "person",
-        "label": "Brake Immediately Person Ahead",
-        "action": "BRAKE IMMEDIATELY PERSON AHEAD",
-        "distance_m": 6.7,
-        "ttc_s": 1.0,
-        "confidence": 0.79,
-        "boxes": [
-          {
-            "x": 61.9,
-            "y": 59.9,
-            "w": 7.5,
-            "h": 18.8,
-            "tag": "person 79%"
-          }
-        ]
-      },
-      {
-        "t": "00:20",
-        "pct": 87.3,
-        "level": "WARNING",
-        "object": "person",
-        "label": "Slow Down Hazard Ahead",
-        "action": "SLOW DOWN HAZARD AHEAD",
-        "distance_m": 10.8,
-        "ttc_s": 2.89,
-        "confidence": 0.66,
-        "boxes": [
-          {
-            "x": 43.6,
-            "y": 58.5,
-            "w": 5.1,
-            "h": 17.9,
-            "tag": "person 66%"
-          }
-        ]
-      },
-      {
-        "t": "00:23",
-        "pct": 97.7,
-        "level": "WARNING",
-        "object": "car",
-        "label": "Slow Down And Increase Following Distance",
-        "action": "SLOW DOWN AND INCREASE FOLLOWING DISTANCE",
-        "distance_m": 13.1,
-        "ttc_s": 1.91,
-        "confidence": 0.78,
-        "boxes": [
-          {
-            "x": 57.5,
-            "y": 58.0,
-            "w": 13.8,
-            "h": 16.3,
-            "tag": "car 78%"
-          }
-        ]
-      }
-    ]
-  },
-  {
-    "id": "video_7",
-    "raw": "road_video_7.mp4",
-    "title": "Road Video 7",
-    "file": "road_video_7_processed.mp4",
-    "thumb": "road_video_7_thumb.jpg",
-    "location": "Untagged route",
-    "weather": "Unknown",
-    "duration": "00:15",
-    "frames": 463,
-    "source_fps": 29.97003,
-    "total_detections": 3817,
-    "incidents": 66,
-    "minimum_ttc_s": 0.339,
-    "average_processing_fps": 18.64,
-    "risk_counts": {
-      "WARNING": 390,
-      "SAFE": 2900,
-      "CRITICAL": 275,
-      "CAUTION": 252
-    },
-    "object_counts": {
-      "car": 3745,
-      "truck": 72
-    },
-    "overall_risk": "WARNING",
-    "events": [
-      {
-        "t": "00:00",
-        "pct": 0.4,
-        "level": "WARNING",
-        "object": "car",
-        "label": "Slow Down And Increase Following Distance",
-        "action": "SLOW DOWN AND INCREASE FOLLOWING DISTANCE",
-        "distance_m": 5.4,
-        "ttc_s": null,
-        "confidence": 0.93,
-        "boxes": [
-          {
-            "x": 0.0,
-            "y": 62.5,
-            "w": 31.9,
-            "h": 37.3,
-            "tag": "car 93%"
-          }
-        ]
-      },
-      {
-        "t": "00:00",
-        "pct": 1.1,
-        "level": "CRITICAL",
-        "object": "car",
-        "label": "Brake Now Object Too Close",
-        "action": "BRAKE NOW OBJECT TOO CLOSE",
-        "distance_m": 28.3,
-        "ttc_s": 1.46,
-        "confidence": 0.76,
-        "boxes": [
-          {
-            "x": 39.7,
-            "y": 60.9,
-            "w": 6.5,
-            "h": 8.7,
-            "tag": "car 76%"
-          }
-        ]
-      },
-      {
-        "t": "00:02",
-        "pct": 14.0,
-        "level": "WARNING",
-        "object": "car",
-        "label": "Slow Down And Increase Following Distance",
-        "action": "SLOW DOWN AND INCREASE FOLLOWING DISTANCE",
-        "distance_m": 6.1,
-        "ttc_s": null,
-        "confidence": 0.79,
-        "boxes": [
-          {
-            "x": 0.0,
-            "y": 58.7,
-            "w": 27.5,
-            "h": 41.1,
-            "tag": "car 79%"
-          }
-        ]
-      },
-      {
-        "t": "00:04",
-        "pct": 27.0,
-        "level": "CRITICAL",
-        "object": "truck",
-        "label": "Brake Now Object Too Close",
-        "action": "BRAKE NOW OBJECT TOO CLOSE",
-        "distance_m": 9.0,
-        "ttc_s": 0.81,
-        "confidence": 0.57,
-        "boxes": [
-          {
-            "x": 2.9,
-            "y": 55.4,
-            "w": 29.6,
-            "h": 32.6,
-            "tag": "truck 57%"
-          }
-        ]
-      },
-      {
-        "t": "00:06",
-        "pct": 40.0,
-        "level": "WARNING",
-        "object": "car",
-        "label": "Slow Down And Increase Following Distance",
-        "action": "SLOW DOWN AND INCREASE FOLLOWING DISTANCE",
-        "distance_m": 6.0,
-        "ttc_s": 4.57,
-        "confidence": 0.71,
-        "boxes": [
-          {
-            "x": 0.0,
-            "y": 60.4,
-            "w": 31.7,
-            "h": 34.9,
-            "tag": "car 71%"
-          }
-        ]
-      },
-      {
-        "t": "00:08",
-        "pct": 53.6,
-        "level": "WARNING",
-        "object": "car",
-        "label": "Slow Down And Increase Following Distance",
-        "action": "SLOW DOWN AND INCREASE FOLLOWING DISTANCE",
-        "distance_m": 58.4,
-        "ttc_s": 2.91,
-        "confidence": 0.62,
-        "boxes": [
-          {
-            "x": 53.5,
-            "y": 60.8,
-            "w": 3.1,
-            "h": 4.3,
-            "tag": "car 62%"
-          }
-        ]
-      },
-      {
-        "t": "00:10",
-        "pct": 66.5,
-        "level": "CRITICAL",
-        "object": "car",
-        "label": "Brake Now Object Too Close",
-        "action": "BRAKE NOW OBJECT TOO CLOSE",
-        "distance_m": 7.1,
-        "ttc_s": 0.64,
-        "confidence": 0.91,
-        "boxes": [
-          {
-            "x": 7.9,
-            "y": 61.5,
-            "w": 27.2,
-            "h": 26.4,
-            "tag": "car 91%"
-          }
-        ]
-      },
-      {
-        "t": "00:12",
-        "pct": 80.3,
-        "level": "WARNING",
-        "object": "car",
-        "label": "Slow Down And Increase Following Distance",
-        "action": "SLOW DOWN AND INCREASE FOLLOWING DISTANCE",
-        "distance_m": 16.8,
-        "ttc_s": 2.03,
-        "confidence": 0.87,
-        "boxes": [
-          {
-            "x": 29.4,
-            "y": 61.6,
-            "w": 11.0,
-            "h": 12.2,
-            "tag": "car 87%"
-          }
-        ]
-      },
-      {
-        "t": "00:14",
-        "pct": 93.3,
-        "level": "WARNING",
-        "object": "truck",
-        "label": "Slow Down And Increase Following Distance",
-        "action": "SLOW DOWN AND INCREASE FOLLOWING DISTANCE",
-        "distance_m": 7.5,
-        "ttc_s": 1.72,
-        "confidence": 0.84,
-        "boxes": [
-          {
-            "x": 0.0,
-            "y": 52.1,
-            "w": 31.8,
-            "h": 46.7,
-            "tag": "truck 84%"
-          }
-        ]
-      }
-    ]
-  },
-  {
-    "id": "video_8",
-    "raw": "road_video_8.mp4",
-    "title": "Road Video 8",
-    "file": "road_video_8_processed.mp4",
-    "thumb": "road_video_8_thumb.jpg",
-    "location": "Untagged route",
-    "weather": "Unknown",
-    "duration": "00:32",
-    "frames": 975,
-    "source_fps": 29.97003,
-    "total_detections": 2567,
-    "incidents": 16,
-    "minimum_ttc_s": 0.313,
-    "average_processing_fps": 18.14,
-    "risk_counts": {
-      "SAFE": 2351,
-      "CAUTION": 29,
-      "WARNING": 81,
-      "CRITICAL": 106
-    },
-    "object_counts": {
-      "car": 1711,
-      "bus": 165,
-      "truck": 437,
-      "traffic light": 95,
-      "longitudinal crack": 9,
-      "person": 122,
-      "bicycle": 28
-    },
-    "overall_risk": "CAUTION",
-    "events": [
-      {
-        "t": "00:00",
-        "pct": 0.1,
-        "level": "SAFE",
-        "object": "car",
-        "label": "Object At Safe Distance",
-        "action": "OBJECT AT SAFE DISTANCE",
-        "distance_m": 24.7,
-        "ttc_s": null,
-        "confidence": 0.78,
-        "boxes": [
-          {
-            "x": 62.1,
-            "y": 63.0,
-            "w": 5.1,
-            "h": 6.4,
-            "tag": "car 78%"
-          }
-        ]
-      },
-      {
-        "t": "00:00",
-        "pct": 0.2,
-        "level": "CAUTION",
-        "object": "car",
-        "label": "Caution Object In Vehicle Lane",
-        "action": "CAUTION OBJECT IN VEHICLE LANE",
-        "distance_m": 14.7,
-        "ttc_s": null,
-        "confidence": 0.79,
-        "boxes": [
-          {
-            "x": 33.1,
-            "y": 59.7,
-            "w": 11.9,
-            "h": 19.6,
-            "tag": "car 79%"
-          }
-        ]
-      },
-      {
-        "t": "00:05",
-        "pct": 14.9,
-        "level": "WARNING",
-        "object": "car",
-        "label": "Slow Down And Increase Following Distance",
-        "action": "SLOW DOWN AND INCREASE FOLLOWING DISTANCE",
-        "distance_m": 42.4,
-        "ttc_s": 2.31,
-        "confidence": 0.77,
-        "boxes": [
-          {
-            "x": 55.3,
-            "y": 55.2,
-            "w": 4.7,
-            "h": 5.0,
-            "tag": "car 77%"
-          }
-        ]
-      },
-      {
-        "t": "00:05",
-        "pct": 15.1,
-        "level": "CRITICAL",
-        "object": "car",
-        "label": "Brake Now Object Too Close",
-        "action": "BRAKE NOW OBJECT TOO CLOSE",
-        "distance_m": 40.0,
-        "ttc_s": 1.39,
-        "confidence": 0.8,
-        "boxes": [
-          {
-            "x": 54.9,
-            "y": 55.2,
-            "w": 5.3,
-            "h": 5.4,
-            "tag": "car 80%"
-          }
-        ]
-      },
-      {
-        "t": "00:08",
-        "pct": 23.9,
-        "level": "SAFE",
-        "object": "car",
-        "label": "Object Outside Vehicle Lane",
-        "action": "OBJECT OUTSIDE VEHICLE LANE",
-        "distance_m": 52.5,
-        "ttc_s": 16.87,
-        "confidence": 0.63,
-        "boxes": [
-          {
-            "x": 50.4,
-            "y": 52.8,
-            "w": 3.5,
-            "h": 3.8,
-            "tag": "car 63%"
-          }
-        ]
-      },
-      {
-        "t": "00:09",
-        "pct": 28.3,
-        "level": "WARNING",
-        "object": "truck",
-        "label": "Slow Down And Increase Following Distance",
-        "action": "SLOW DOWN AND INCREASE FOLLOWING DISTANCE",
-        "distance_m": 30.5,
-        "ttc_s": 2.63,
-        "confidence": 0.8,
-        "boxes": [
-          {
-            "x": 40.6,
-            "y": 44.8,
-            "w": 7.9,
-            "h": 16.1,
-            "tag": "truck 80%"
-          }
-        ]
-      },
-      {
-        "t": "00:11",
-        "pct": 34.5,
-        "level": "CRITICAL",
-        "object": "bus",
-        "label": "Brake Now Object Too Close",
-        "action": "BRAKE NOW OBJECT TOO CLOSE",
-        "distance_m": 6.9,
-        "ttc_s": null,
-        "confidence": 0.6,
-        "boxes": [
-          {
-            "x": 0.0,
-            "y": 0.7,
-            "w": 34.0,
-            "h": 99.0,
-            "tag": "bus 60%"
-          }
-        ]
-      },
-      {
-        "t": "00:13",
-        "pct": 41.5,
-        "level": "WARNING",
-        "object": "longitudinal crack",
-        "label": "Slow Down Hazard Ahead",
-        "action": "SLOW DOWN HAZARD AHEAD",
-        "distance_m": 3.5,
-        "ttc_s": null,
-        "confidence": 0.65,
-        "boxes": [
-          {
-            "x": 82.6,
-            "y": 76.9,
-            "w": 17.2,
-            "h": 22.2,
-            "tag": "longitudinal crack 65%"
-          }
-        ]
-      },
-      {
-        "t": "00:15",
-        "pct": 48.3,
-        "level": "WARNING",
-        "object": "car",
-        "label": "Slow Down And Increase Following Distance",
-        "action": "SLOW DOWN AND INCREASE FOLLOWING DISTANCE",
-        "distance_m": 26.8,
-        "ttc_s": 1.78,
-        "confidence": 0.7,
-        "boxes": [
-          {
-            "x": 44.2,
-            "y": 54.5,
-            "w": 6.8,
-            "h": 7.8,
-            "tag": "car 70%"
-          }
-        ]
-      },
-      {
-        "t": "00:17",
-        "pct": 54.5,
-        "level": "CRITICAL",
-        "object": "car",
-        "label": "Brake Now Object Too Close",
-        "action": "BRAKE NOW OBJECT TOO CLOSE",
-        "distance_m": 5.3,
-        "ttc_s": 0.68,
-        "confidence": 0.71,
-        "boxes": [
-          {
-            "x": 0.0,
-            "y": 54.2,
-            "w": 34.6,
-            "h": 43.4,
-            "tag": "car 71%"
-          }
-        ]
-      },
-      {
-        "t": "00:27",
-        "pct": 83.8,
-        "level": "WARNING",
-        "object": "bus",
-        "label": "Slow Down And Increase Following Distance",
-        "action": "SLOW DOWN AND INCREASE FOLLOWING DISTANCE",
-        "distance_m": 28.0,
-        "ttc_s": 2.83,
-        "confidence": 0.65,
-        "boxes": [
-          {
-            "x": 52.9,
-            "y": 48.8,
-            "w": 8.9,
-            "h": 15.1,
-            "tag": "bus 65%"
-          }
-        ]
-      },
-      {
-        "t": "00:32",
-        "pct": 99.7,
-        "level": "WARNING",
-        "object": "longitudinal crack",
-        "label": "Slow Down Hazard Ahead",
-        "action": "SLOW DOWN HAZARD AHEAD",
-        "distance_m": 4.7,
-        "ttc_s": null,
-        "confidence": 0.35,
-        "boxes": [
-          {
-            "x": 77.2,
-            "y": 78.1,
-            "w": 15.7,
-            "h": 21.4,
-            "tag": "longitudinal crack 35%"
           }
         ]
       }

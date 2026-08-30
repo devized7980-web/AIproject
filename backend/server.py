@@ -370,6 +370,16 @@ def raw_video(filename: str) -> FileResponse:
 
 
 # ──────────────────────────────────────────────────────────────── static frontend
+# The "Videos" SPA page shares its path with the processed-clip mount below,
+# so serve the app shell for the bare /videos path first (mounts never fall
+# back to the SPA catch-all).
+if DIST.exists() and (DIST / "index.html").exists():
+
+    def _spa_index():
+        return FileResponse(DIST / "index.html", media_type="text/html")
+
+    app.get("/videos")(_spa_index)
+    app.get("/videos/")(_spa_index)
 if PUBLIC_VIDEOS.exists():
     app.mount("/videos", StaticFiles(directory=PUBLIC_VIDEOS), name="videos")
 if DIST.exists():

@@ -1,13 +1,16 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
-  Activity, RadioTower, Gauge, Timer, Zap, Car, Users, Cone, BellRing,
-  ChevronRight, ShieldAlert,
+  Activity, RadioTower, Gauge, Timer, Car, Users, Cone, BellRing,
+  ShieldAlert, ShieldCheck, Volume2,
 } from "lucide-react";
 import { getVideoFrames, RAW } from "../api.js";
 import { VIDEOS } from "../data.js";
 import { useLiveFeed } from "../useLive.js";
 import { playAlertSound } from "../sound.js";
 import { Panel, Tag, levelColor, levelHue, fmtTtc } from "../ui.jsx";
+import MetricCard from "../components/MetricCard.jsx";
+import RiskIndicator from "../components/RiskIndicator.jsx";
+import AlertFeed from "../components/AlertFeed.jsx";
 import { useSettingsCtx } from "../App.jsx";
 
 const mmss = (s) => {
@@ -74,7 +77,7 @@ function RouteSchematic({ ring, state }) {
           </linearGradient>
         </defs>
         <rect x="30" y="46" width="300" height="18" rx="9" fill="url(#rtseg)" />
-        <line x1="30" y1="55" x2="330" y2="55" stroke="#0B0F17" strokeWidth="1.5" strokeDasharray="6 6" />
+        <line x1="30" y1="55" x2="330" y2="55" stroke="var(--bg)" strokeWidth="1.5" strokeDasharray="6 6" />
         {(ring.potholes || []).slice(-6).map((n, i) =>
           n > 0 ? (
             <g key={i} className="sw-pulse" style={{ animationDelay: `${i * 0.18}s` }}>
@@ -197,6 +200,14 @@ export default function LiveCommandCenter({ videos }) {
     }
   }, [feed?.alert, settings.sound]);
 
+  const minTtc = useMemo(() => {
+    let m = Infinity;
+    synced.rows.forEach((d) => { if (Number.isFinite(+d.ttc_s)) m = Math.min(m, +d.ttc_s); });
+    return Number.isFinite(m) ? m.toFixed(1) : "—";
+  }, [synced.rows]);
+
+  const laneDep = synced.rows.filter((d) => !d.in_lane).length;
+
   const kpi = useMemo(() => {
     const f = feed || {};
     const c = synced.counts;
@@ -206,9 +217,18 @@ export default function LiveCommandCenter({ videos }) {
       { label: "Potholes", value: c.potholes ?? 0, Icon: Cone, accent: "var(--critical)" },
       { label: "Vehicles", value: c.vehicles ?? 0, Icon: Car, accent: "var(--gold)" },
       { label: "Pedestrians", value: c.persons ?? 0, Icon: Users, accent: "var(--caution)" },
+      { label: "Min TTC", value: minTtc, unit: "s", Icon: ShieldCheck, accent: "var(--blue)" },
       { label: "Live alerts", value: f.cumulative?.alerts ?? 0, Icon: BellRing, accent: "var(--warning)" },
     ];
-  }, [feed, synced]);
+  }, [feed, synced, minTtc]);
+
+  const alertsList = useMemo(() => {
+    const list = all
+      .flatMap((v) => (Array.isArray(v.events) ? v.events : []).map((e) => ({ ...e, vkey: `${v.id}-${e.t}`, video_title: v.title || "" })))
+      .filter((e) => e.level === "WARNING" || e.level === "CRITICAL");
+    if (feed?.alert && !list.some((a) => a.vkey === feed.alert.id)) list.unshift({ ...feed.alert, vkey: feed.alert.id });
+    return list.slice(0, 8);
+  }, [all, feed?.alert]);
 
   const overlayRows = useMemo(
     () => placeLabels([...synced.rows].sort((a, b) => (b.risk === "CRITICAL") - (a.risk === "CRITICAL"))),
@@ -294,15 +314,7 @@ export default function LiveCommandCenter({ videos }) {
 
           <div className="sw-kpis" style={{ marginBottom: 0 }}>
             {kpi.map((k) => (
-              <div className="sw-kpi" key={k.label}>
-                <div className="l">
-                  <k.Icon size={12} style={{ verticalAlign: -1, marginRight: 5, color: k.accent || "var(--gold)" }} />
-                  {k.label}
-                </div>
-                <div className="v" style={k.accent ? { color: k.accent } : undefined}>
-                  {k.value}{k.unit && <span style={{ fontSize: 13, color: "var(--muted)", marginLeft: 4 }}>{k.unit}</span>}
-                </div>
-              </div>
+              <MetricCard key={k.label} label={k.label} value={k.value} unit={k.unit} accent={k.accent} Icon={k.Icon} />
             ))}
           </div>
 
@@ -340,10 +352,7 @@ export default function LiveCommandCenter({ videos }) {
 
         <div className="sw-stack">
           <Panel title="Current safety state" right={<ShieldAlert size={14} style={{ color: levelColor(synced.state.level) }} />}>
-            <div className="sw-bigstate" style={{ "--c": levelColor(synced.state.level) }}>
-              <div className="lvl">{synced.state.level}</div>
-              <div className="act">{synced.state.action}</div>
-            </div>
+            <RiskIndicator level={synced.state.level} action={synced.state.action} />
             <div style={{ marginTop: 12 }}>
               <div className="sw-eyebrow" style={{ marginBottom: 6 }}>Rolling counts (last 24 frames)</div>
               <div className="sw-sparkrow">
@@ -354,34 +363,8 @@ export default function LiveCommandCenter({ videos }) {
             </div>
           </Panel>
 
-          <Panel title="Latest alerts">
-            <div className="sw-livealerts">
-              {!feed?.alert && <div className="sw-eyebrow" style={{ padding: "6px 0" }}>No recent alerts — all clear.</div>}
-              {feed?.alert && (
-                <button className="sw-alertrow" data-lvl={feed.alert.level}>
-                  <i className="pulse" style={{ background: levelColor(feed.alert.level) }} />
-                  <div className="grow" style={{ minWidth: 0 }}>
-                    <div className="t sw-truncate">{feed.alert.label}</div>
-                    <div className="d sw-truncate">{feed.alert.video_title} · {feed.alert.distance_m} m · {fmtTtc(feed.alert.ttc_s)}</div>
-                  </div>
-                  <ChevronRight size={15} style={{ color: "var(--muted)", flexShrink: 0 }} />
-                </button>
-              )}
-               {all
-                 .flatMap((v) => (Array.isArray(v.events) ? v.events : []).map((e) => ({ ...e, video: v.title || "" })))
-                 .filter((e) => e.video === video?.title)
-                 .filter((e) => e.level === "WARNING" || e.level === "CRITICAL")
-                .slice(0, 4)
-                .map((e, i) => (
-                  <div className="sw-alertrow" data-lvl={e.level} key={`${e.video}-${e.t}-${i}`}>
-                    <i className="pulse" style={{ background: levelColor(e.level) }} />
-                    <div className="grow" style={{ minWidth: 0 }}>
-                      <div className="t sw-truncate">{e.label}</div>
-                      <div className="d sw-truncate">{e.video} · {e.distance_m} m</div>
-                    </div>
-                  </div>
-                ))}
-            </div>
+          <Panel title="Latest alerts" right={<span className="sw-eyebrow">{alertsList.length} open</span>}>
+            <AlertFeed alerts={alertsList} empty="No recent alerts — all clear." />
           </Panel>
 
           <Panel title="Live feed engine" right={<span className="sw-eyebrow">v2.0</span>}>
@@ -390,6 +373,8 @@ export default function LiveCommandCenter({ videos }) {
               <div className="row"><span>Reasoning</span><b>{feed ? (mode === "live" ? "SWI-Prolog live" : "Rule mirror") : "—"}</b></div>
               <div className="row"><span>Source clip</span><b>{String(video?.title || video?.id || "—").split("—")[0]}</b></div>
               <div className="row"><span>Weather</span><b>{video?.weather}</b></div>
+              <div className="row"><span>Lane watch</span><b style={{ color: laneDep ? "var(--warning)" : "var(--safe)" }}>{laneDep ? "Departure" : "In lane"}</b></div>
+              <div className="row"><span>Voice alerts</span><b style={{ color: settings.sound ? "var(--safe)" : "var(--faint)" }}><Volume2 size={12} style={{ verticalAlign: -2, marginRight: 5 }} />{settings.sound ? "Enabled" : "Muted"}</b></div>
             </div>
           </Panel>
         </div>

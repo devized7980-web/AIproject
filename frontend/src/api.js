@@ -101,16 +101,11 @@ export async function simulate(body) {
 }
 
 // ──────────────────────────────────────────────────────────────── fallbacks
-const RAW = {
-  video_1: "road_video_1.mp4.MP4",
-  video_2: "road_video_2.mp4.MP4",
-  video_3: "road_video_3.mp4.mp4",
-  video_4: "road_video_4.mp4",
-  video_5: "road_video_5.mp4",
-  video_6: "road_video_6.mp4",
-  video_7: "road_video_7.mp4",
-  video_8: "road_video_8.mp4",
-};
+// Raw camera clip per video id, derived from the real data so it always
+// matches the current library regardless of ordering or source names.
+const RAW = Object.fromEntries(
+  VIDEOS.filter((v) => v?.raw).map((v) => [v.id, v.raw])
+);
 
 function synthesizeFrames(videoId) {
   const v = VIDEOS.find((x) => x.id === videoId);
@@ -210,7 +205,7 @@ function score(counts) {
   const w = { SAFE: 0, CAUTION: 1, WARNING: 2, CRITICAL: 3 };
   const total = Object.values(counts).reduce((s, n) => s + n, 0) || 1;
   const s = LEVELS.reduce((sum, l) => sum + w[l] * (counts[l] || 0), 0) / total;
-  return Math.round(Math.max(0, Math.min(100, 100 - (s * 100) / 3)), 1);
+  return Math.round(Math.max(0, Math.min(100, 100 - (s * 100) / 3)) * 10) / 10;
 }
 
 function synthesizePerformance() {
