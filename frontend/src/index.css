@@ -258,6 +258,13 @@ a { color: inherit; text-decoration: none; }
   box-shadow: inset 0 0 0 1px rgba(22, 181, 140, 0.10); }
 .sw-stage video { width: 100%; height: 100%; object-fit: cover; display: block; background: var(--stage-bg); }
 .sw-video-card video { width: 100%; aspect-ratio: 16 / 9; display: block; object-fit: cover; background: var(--stage-bg); }
+.sw-thumb-wrap { position: relative; width: 100%; aspect-ratio: 16 / 9; display: block; overflow: hidden; cursor: pointer; background: var(--stage-bg); }
+.sw-thumb-wrap img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.sw-play-btn { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+  width: 52px; height: 52px; border-radius: 50%; background: rgba(0,0,0,0.55);
+  display: grid; place-content: center; color: #fff; transition: background 180ms, transform 180ms;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.3); }
+.sw-thumb-wrap:hover .sw-play-btn { background: rgba(22,181,140,0.85); transform: translate(-50%, -50%) scale(1.08); }
 .sw-feedgrid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; }
 .sw-video-title { display: flex; align-items: center; gap: 7px; }
 .sw-empty { position: absolute; inset: 0; display: grid; place-content: center; justify-items: center;

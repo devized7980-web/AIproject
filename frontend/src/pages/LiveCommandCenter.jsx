@@ -120,6 +120,7 @@ export default function LiveCommandCenter({ videos }) {
   const [stageRatio, setStageRatio] = useState(null);
   const [videoReady, setVideoReady] = useState(false);
   const [videoError, setVideoError] = useState(false);
+  const [usingProcessed, setUsingProcessed] = useState(false);
   const sourceFps = Number(video?.source_fps) > 0 ? Number(video.source_fps) : 30;
 
   useEffect(() => {
@@ -132,6 +133,7 @@ export default function LiveCommandCenter({ videos }) {
     setCurTime(0);
     setVideoReady(false);
     setVideoError(false);
+    setUsingProcessed(false);
     if (!video?.id) return () => { on = false; };
     getVideoFrames(video.id).then((d) => {
       const list = (d && Array.isArray(d.frames) ? d.frames : [])
@@ -273,18 +275,31 @@ export default function LiveCommandCenter({ videos }) {
             <div className="sw-stage" style={stageRatio ? { aspectRatio: String(stageRatio) } : undefined}>
               <video
                 ref={videoRef}
-                key={video?.id}
-                src={video?.raw || RAW[video?.id] ? `/raw/${video.raw || RAW[video.id]}` : ""}
+                key={`${video?.id}-${usingProcessed}`}
+                src={
+                  usingProcessed
+                    ? `/videos/${video?.file}`
+                    : (video?.raw || RAW[video?.id]) ? `/raw/${video.raw || RAW[video.id]}` : ""
+                }
                 muted playsInline loop autoPlay
                 onLoadedMetadata={(e) => {
                   const v = e.currentTarget;
                   setVideoReady(true);
                   if (v.videoWidth && v.videoHeight) setStageRatio(v.videoWidth / v.videoHeight);
                 }}
-                onError={() => { setVideoReady(false); setVideoError(true); }}
+                onError={() => {
+                  if (!usingProcessed && (video?.raw || RAW[video?.id]) && video?.file) {
+                    setUsingProcessed(true);
+                    setVideoError(false);
+                  } else {
+                    setVideoReady(false);
+                    setVideoError(true);
+                  }
+                }}
               />
-              {(videoError || !(video?.raw || RAW[video?.id])) && <div className="sw-empty"><div>Raw video unavailable</div><small>Backend offline or the original clip could not be decoded.</small></div>}
-              {videoReady && showOverlay && (video?.raw || RAW[video?.id]) && overlayRows.map((d, i) => (
+              {videoError && <div className="sw-empty"><div>Video unavailable</div><small>Both raw and processed clips could not be loaded. The backend may be offline.</small></div>}
+              {!videoError && !usingProcessed && !(video?.raw || RAW[video?.id]) && <div className="sw-empty"><div>Raw video unavailable</div><small>Backend offline or the original clip could not be decoded.</small></div>}
+              {videoReady && showOverlay && (usingProcessed || video?.raw || RAW[video?.id]) && overlayRows.map((d, i) => (
                 <span
                   key={`${d.track_id || d.name}-${d.frame || i}`}
                   className="sw-dbox"

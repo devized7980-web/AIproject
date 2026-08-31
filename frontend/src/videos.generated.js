@@ -2887,5 +2887,408 @@ export const VIDEOS = [
         ]
       }
     ]
+  },
+  {
+    "id": "video_13",
+    "title": "Video 2026-08-31 21-58-23",
+    "file": "video_2026-08-31_21-58-23_processed.mp4",
+    "raw": "video_2026-08-31_21-58-23.mp4",
+    "thumb": "video_2026-08-31_21-58-23_thumb.jpg",
+    "location": "Untagged route",
+    "weather": "Unknown",
+    "duration": "01:23",
+    "frames": 2101,
+    "source_fps": 25.0,
+    "total_detections": 519,
+    "incidents": 30,
+    "minimum_ttc_s": 0.442,
+    "average_processing_fps": 2.82,
+    "risk_counts": {
+      "SAFE": 312,
+      "CAUTION": 34,
+      "WARNING": 88,
+      "CRITICAL": 85
+    },
+    "object_counts": {
+      "truck": 12,
+      "person": 246,
+      "motorcycle": 92,
+      "bus": 22,
+      "car": 147
+    },
+    "overall_risk": "CRITICAL",
+    "events": [
+      {
+        "t": "00:00",
+        "pct": 0.1,
+        "level": "SAFE",
+        "object": "truck",
+        "label": "Object Outside Vehicle Lane",
+        "action": "OBJECT OUTSIDE VEHICLE LANE",
+        "distance_m": 18.1,
+        "ttc_s": null,
+        "confidence": 0.66,
+        "boxes": [
+          {
+            "x": 92.7,
+            "y": 45.8,
+            "w": 7.2,
+            "h": 31.9,
+            "tag": "truck 66%"
+          }
+        ]
+      },
+      {
+        "t": "00:01",
+        "pct": 1.6,
+        "level": "CAUTION",
+        "object": "person",
+        "label": "Caution Object In Vehicle Lane",
+        "action": "CAUTION OBJECT IN VEHICLE LANE",
+        "distance_m": 7.7,
+        "ttc_s": null,
+        "confidence": 0.53,
+        "boxes": [
+          {
+            "x": 63.0,
+            "y": 52.9,
+            "w": 3.6,
+            "h": 14.6,
+            "tag": "person 53%"
+          }
+        ]
+      },
+      {
+        "t": "00:03",
+        "pct": 3.1,
+        "level": "WARNING",
+        "object": "person",
+        "label": "Slow Down Hazard Ahead",
+        "action": "SLOW DOWN HAZARD AHEAD",
+        "distance_m": 3.8,
+        "ttc_s": null,
+        "confidence": 0.64,
+        "boxes": [
+          {
+            "x": 60.7,
+            "y": 50.6,
+            "w": 7.3,
+            "h": 28.5,
+            "tag": "person 64%"
+          }
+        ]
+      },
+      {
+        "t": "00:03",
+        "pct": 3.2,
+        "level": "CRITICAL",
+        "object": "person",
+        "label": "Brake Immediately Person Ahead",
+        "action": "BRAKE IMMEDIATELY PERSON AHEAD",
+        "distance_m": 3.1,
+        "ttc_s": 1.14,
+        "confidence": 0.8,
+        "boxes": [
+          {
+            "x": 62.5,
+            "y": 50.1,
+            "w": 8.0,
+            "h": 30.0,
+            "tag": "person 80%"
+          }
+        ]
+      },
+      {
+        "t": "00:05",
+        "pct": 5.5,
+        "level": "SAFE",
+        "object": "person",
+        "label": "Object Outside Vehicle Lane",
+        "action": "OBJECT OUTSIDE VEHICLE LANE",
+        "distance_m": 3.0,
+        "ttc_s": 1.31,
+        "confidence": 0.59,
+        "boxes": [
+          {
+            "x": 80.5,
+            "y": 50.3,
+            "w": 10.0,
+            "h": 38.9,
+            "tag": "person 59%"
+          }
+        ]
+      },
+      {
+        "t": "00:09",
+        "pct": 11.3,
+        "level": "CRITICAL",
+        "object": "bus",
+        "label": "Brake Now Object Too Close",
+        "action": "BRAKE NOW OBJECT TOO CLOSE",
+        "distance_m": 4.0,
+        "ttc_s": null,
+        "confidence": 0.7,
+        "boxes": [
+          {
+            "x": 0.0,
+            "y": 41.7,
+            "w": 34.2,
+            "h": 52.5,
+            "tag": "bus 70%"
+          }
+        ]
+      },
+      {
+        "t": "00:12",
+        "pct": 15.0,
+        "level": "CRITICAL",
+        "object": "person",
+        "label": "Brake Immediately Person Ahead",
+        "action": "BRAKE IMMEDIATELY PERSON AHEAD",
+        "distance_m": 1.4,
+        "ttc_s": null,
+        "confidence": 0.8,
+        "boxes": [
+          {
+            "x": 78.3,
+            "y": 51.9,
+            "w": 19.8,
+            "h": 47.4,
+            "tag": "person 80%"
+          }
+        ]
+      },
+      {
+        "t": "00:15",
+        "pct": 18.3,
+        "level": "WARNING",
+        "object": "person",
+        "label": "Slow Down Hazard Ahead",
+        "action": "SLOW DOWN HAZARD AHEAD",
+        "distance_m": 3.9,
+        "ttc_s": null,
+        "confidence": 0.63,
+        "boxes": [
+          {
+            "x": 44.7,
+            "y": 50.8,
+            "w": 6.6,
+            "h": 23.1,
+            "tag": "person 63%"
+          }
+        ]
+      },
+      {
+        "t": "00:28",
+        "pct": 33.8,
+        "level": "WARNING",
+        "object": "car",
+        "label": "Slow Down And Increase Following Distance",
+        "action": "SLOW DOWN AND INCREASE FOLLOWING DISTANCE",
+        "distance_m": 10.9,
+        "ttc_s": 2.64,
+        "confidence": 0.7,
+        "boxes": [
+          {
+            "x": 53.0,
+            "y": 54.0,
+            "w": 9.5,
+            "h": 14.4,
+            "tag": "car 70%"
+          }
+        ]
+      },
+      {
+        "t": "00:32",
+        "pct": 38.6,
+        "level": "WARNING",
+        "object": "person",
+        "label": "Slow Down Hazard Ahead",
+        "action": "SLOW DOWN HAZARD AHEAD",
+        "distance_m": 5.9,
+        "ttc_s": null,
+        "confidence": 0.56,
+        "boxes": [
+          {
+            "x": 64.0,
+            "y": 51.9,
+            "w": 3.4,
+            "h": 17.6,
+            "tag": "person 56%"
+          }
+        ]
+      },
+      {
+        "t": "00:50",
+        "pct": 59.5,
+        "level": "WARNING",
+        "object": "person",
+        "label": "Slow Down Hazard Ahead",
+        "action": "SLOW DOWN HAZARD AHEAD",
+        "distance_m": 4.2,
+        "ttc_s": null,
+        "confidence": 0.6,
+        "boxes": [
+          {
+            "x": 67.0,
+            "y": 50.1,
+            "w": 6.0,
+            "h": 29.6,
+            "tag": "person 60%"
+          }
+        ]
+      },
+      {
+        "t": "00:56",
+        "pct": 66.7,
+        "level": "WARNING",
+        "object": "person",
+        "label": "Slow Down Hazard Ahead",
+        "action": "SLOW DOWN HAZARD AHEAD",
+        "distance_m": 5.3,
+        "ttc_s": null,
+        "confidence": 0.56,
+        "boxes": [
+          {
+            "x": 62.7,
+            "y": 51.7,
+            "w": 5.2,
+            "h": 17.8,
+            "tag": "person 56%"
+          }
+        ]
+      },
+      {
+        "t": "01:03",
+        "pct": 75.1,
+        "level": "WARNING",
+        "object": "person",
+        "label": "Slow Down Hazard Ahead",
+        "action": "SLOW DOWN HAZARD AHEAD",
+        "distance_m": 5.7,
+        "ttc_s": null,
+        "confidence": 0.52,
+        "boxes": [
+          {
+            "x": 51.2,
+            "y": 52.4,
+            "w": 4.8,
+            "h": 17.6,
+            "tag": "person 52%"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "video_14",
+    "title": "Video 2026-08-31 21-58-34",
+    "file": "video_2026-08-31_21-58-34_processed.mp4",
+    "raw": "video_2026-08-31_21-58-34.mp4",
+    "thumb": "video_2026-08-31_21-58-34_thumb.jpg",
+    "location": "Untagged route",
+    "weather": "Unknown",
+    "duration": "01:00",
+    "frames": 1801,
+    "source_fps": 30.0,
+    "total_detections": 975,
+    "incidents": 2,
+    "minimum_ttc_s": 0.398,
+    "average_processing_fps": 2.72,
+    "risk_counts": {
+      "SAFE": 959,
+      "CAUTION": 7,
+      "WARNING": 9
+    },
+    "object_counts": {
+      "car": 948,
+      "bus": 1,
+      "truck": 3,
+      "person": 17,
+      "traffic light": 6
+    },
+    "overall_risk": "SAFE",
+    "events": [
+      {
+        "t": "00:00",
+        "pct": 0.1,
+        "level": "SAFE",
+        "object": "car",
+        "label": "Object Outside Vehicle Lane",
+        "action": "OBJECT OUTSIDE VEHICLE LANE",
+        "distance_m": 30.5,
+        "ttc_s": null,
+        "confidence": 0.62,
+        "boxes": [
+          {
+            "x": 45.7,
+            "y": 57.1,
+            "w": 4.4,
+            "h": 4.0,
+            "tag": "car 62%"
+          }
+        ]
+      },
+      {
+        "t": "00:05",
+        "pct": 8.8,
+        "level": "CAUTION",
+        "object": "car",
+        "label": "Caution Object In Vehicle Lane",
+        "action": "CAUTION OBJECT IN VEHICLE LANE",
+        "distance_m": 23.5,
+        "ttc_s": 4.54,
+        "confidence": 0.66,
+        "boxes": [
+          {
+            "x": 43.3,
+            "y": 58.2,
+            "w": 5.8,
+            "h": 3.9,
+            "tag": "car 66%"
+          }
+        ]
+      },
+      {
+        "t": "00:05",
+        "pct": 8.9,
+        "level": "WARNING",
+        "object": "car",
+        "label": "Slow Down And Increase Following Distance",
+        "action": "SLOW DOWN AND INCREASE FOLLOWING DISTANCE",
+        "distance_m": 22.7,
+        "ttc_s": 2.68,
+        "confidence": 0.59,
+        "boxes": [
+          {
+            "x": 43.1,
+            "y": 58.1,
+            "w": 5.9,
+            "h": 4.0,
+            "tag": "car 59%"
+          }
+        ]
+      },
+      {
+        "t": "00:42",
+        "pct": 70.6,
+        "level": "SAFE",
+        "object": "car",
+        "label": "Object Outside Vehicle Lane",
+        "action": "OBJECT OUTSIDE VEHICLE LANE",
+        "distance_m": 9.2,
+        "ttc_s": 0.61,
+        "confidence": 0.58,
+        "boxes": [
+          {
+            "x": 0.0,
+            "y": 47.9,
+            "w": 15.9,
+            "h": 20.0,
+            "tag": "car 58%"
+          }
+        ]
+      }
+    ]
   }
 ];

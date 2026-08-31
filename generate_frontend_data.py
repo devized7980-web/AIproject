@@ -34,6 +34,8 @@ GEN_MODULE = FRONTEND / "src" / "videos.generated.js"
 THUMB_W = 640
 THUMB_Q = 78
 
+LISTED_EXTENSIONS = (".mp4", ".mov", ".avi", ".mkv", ".MP4", ".MOV")
+
 LEVEL_PRIORITY = {"SAFE": 0, "CAUTION": 1, "WARNING": 2, "CRITICAL": 3}
 
 # Classes that matter for a road-safety dashboard. Anything else (giraffes,
@@ -228,6 +230,21 @@ def overall_risk(risk_counts: dict) -> str:
     return "SAFE"
 
 
+def resolve_raw_file(stem: str) -> str:
+    """Return the on-disk raw camera clip name for a processed-video stem.
+
+    The summary's ``video`` key can hold a renamed presentation name that does
+    not match the actual file in the videos/ folder, so resolve the real file
+    by prefix-matching against the clips that exist on disk."""
+    if not (ROOT / "videos").exists():
+        return stem
+    candidates = sorted(
+        (p.name for p in (ROOT / "videos").iterdir()
+         if p.suffix in LISTED_EXTENSIONS and p.name.startswith(stem)),
+    )
+    return candidates[0] if candidates else stem
+
+
 def make_thumb(src: Path, dest: Path, events: list[dict], duration: float) -> None:
     """Save a representative frame as a JPEG for the gallery card.
 
@@ -265,7 +282,6 @@ def main() -> None:
 
     for summary_path in sorted(OUTPUT.glob("*_summary.json")):
         summary = json.loads(summary_path.read_text(encoding="utf-8"))
-        raw_name = summary.get("video", summary_path.name.replace("_summary.json", ""))
         stem = summary_path.name.replace("_summary.json", "")
         csv_path = OUTPUT / f"{stem}_detections.csv"
         src_video = OUTPUT / f"{stem}_advanced.mp4"
@@ -277,6 +293,7 @@ def main() -> None:
         with csv_path.open(newline="", encoding="utf-8") as f:
             rows = list(csv.DictReader(f))
 
+        raw_name = resolve_raw_file(stem)
         raw_video = ROOT / "videos" / str(raw_name)
         cap = cv2.VideoCapture(str(raw_video if raw_video.exists() else src_video))
         w = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH)) or 1280

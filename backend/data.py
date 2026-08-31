@@ -55,6 +55,21 @@ META = {
     },
 }
 
+RAW_EXTENSIONS = (".mp4", ".mov", ".avi", ".mkv", ".MP4", ".MOV")
+
+
+def resolve_raw_file(stem: str) -> str:
+    """Find the real on-disk raw clip for a processed-video stem.
+
+    The summary's ``video`` field can hold a renamed presentation name that does
+    not match the actual file, so prefix-match against the clips in videos/."""
+    try:
+        entries = [p.name for p in (ROOT / "videos").iterdir()
+                   if p.suffix in RAW_EXTENSIONS and p.name.startswith(stem)]
+    except OSError:
+        return stem
+    return sorted(entries)[0] if entries else stem
+
 
 def mmss(seconds: float) -> str:
     seconds = max(0, int(round(seconds)))
@@ -191,7 +206,7 @@ class DataStore:
                 continue
             try:
                 stem = summary_path.name.replace("_summary.json", "")
-                raw_name = summary.get("video", stem)
+                raw_name = resolve_raw_file(stem)
                 if not raw_name or str(raw_name).lower() == "null" or stem in {"batch", "null"}:
                     continue
                 meta = META.get(raw_name, {})
