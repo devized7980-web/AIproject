@@ -13,6 +13,8 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, TypeAlias
 
+from video_identity import canonical_video_id
+
 import cv2
 import numpy as np
 from ultralytics import YOLO
@@ -1858,6 +1860,25 @@ ul.others li{{display:flex;align-items:center;gap:8px;padding:4px 0;color:#b9c5d
     output_path.write_text(html, encoding="utf-8")
 
 
+def choose_fast_demo_window(cap: cv2.VideoCapture, fps: float, frame_count: int) -> tuple[int, int]:
+    """Choose an active eight-second source window without running inference."""
+    if frame_count <= 0 or fps <= 0:
+        return 1, max(1, int(round(fps * 8)))
+    window = min(frame_count, max(1, int(round(fps * 8))))
+    step = max(1, int(round(fps)))
+    scores: list[tuple[float, int]] = []
+    for frame_no in range(1, frame_count + 1, step):
+        cap.set(cv2.CAP_PROP_POS_FRAMES, frame_no - 1)
+        ok, frame = cap.read()
+        if not ok or frame is None:
+            continue
+        gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+        scores.append((float(gray.std()) + float(cv2.Canny(gray, 80, 160).mean()) * 0.35, frame_no))
+    centre = max(scores, default=(0.0, 1))[1]
+    start = max(1, min(centre - window // 2, frame_count - window + 1))
+    return start, start + window - 1
+
+
 def process_video(path: Path, common: YOLO, custom: YOLO, expert: PrologRiskEngine,
                   display: bool, voice_enabled: bool, next_video_name: str | None = None,
                   calibrator_config: dict | None = None,
@@ -1865,7 +1886,8 @@ def process_video(path: Path, common: YOLO, custom: YOLO, expert: PrologRiskEngi
                   extractor_callable: Any | None = None,
                   reader_queue_size: int = 8,
                   result_queue_size: int = 8,
-                  extra_models: list[tuple[YOLO, str]] | None = None) -> None:
+                  extra_models: list[tuple[YOLO, str]] | None = None,
+                  fast_demo: bool = False) -> None:
     OUTPUT_FOLDER.mkdir(parents=True, exist_ok=True)
     # Start each video with a clean tracker, otherwise the previous video's
     # tracks persist into this one (model.track uses persist=True).
@@ -1879,6 +1901,13 @@ def process_video(path: Path, common: YOLO, custom: YOLO, expert: PrologRiskEngi
     source_w = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
     source_h = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
     source_fps = cap.get(cv2.CAP_PROP_FPS) or 30.0
+    source_frame_count = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+    demo_start = 1
+    demo_end = source_frame_count
+    if fast_demo:
+        demo_start, demo_end = choose_fast_demo_window(cap, source_fps, source_frame_count)
+        cap.set(cv2.CAP_PROP_POS_FRAMES, demo_start - 1)
+        print(f"Fast demo source window: frames {demo_start}-{demo_end} ({(demo_end - demo_start + 1) / source_fps:.1f}s)")
 
     # 4K input is downscaled before processing. Measured on road_video_4:
     # running both models on native 3840px frames costs 77.5 ms/frame versus
@@ -1898,10 +1927,12 @@ def process_video(path: Path, common: YOLO, custom: YOLO, expert: PrologRiskEngi
     print(f"  Output-video resolution:{source_w}x{source_h}")
     print(f"  Visualization scale:    {vs:.2f}")
 
-    video_out = OUTPUT_FOLDER / f"{path.stem}_advanced.mp4"
-    csv_out = OUTPUT_FOLDER / f"{path.stem}_detections.csv"
-    json_out = OUTPUT_FOLDER / f"{path.stem}_summary.json"
-    dashboard_out = OUTPUT_FOLDER / f"{path.stem}_dashboard.html"
+    output_stem = f"{path.stem}_fast_demo" if fast_demo else path.stem
+    video_out = OUTPUT_FOLDER / f"{output_stem}_advanced.mp4"
+    csv_out = OUTPUT_FOLDER / f"{output_stem}_detections.csv"
+    json_out = OUTPUT_FOLDER / f"{output_stem}_summary.json"
+    dashboard_out = OUTPUT_FOLDER / f"{output_stem}_dashboard.html"
+    stream_id = canonical_video_id(path.name)
 
     # H.264 ('avc1') rather than MPEG-4 Part 2 ('mp4v'). QuickTime/AVFoundation
     # decodes mp4v output with heavy block artifacts and tearing, which looks
@@ -2013,16 +2044,22 @@ def process_video(path: Path, common: YOLO, custom: YOLO, expert: PrologRiskEngi
     # reader thread: read frames and enqueue
     def reader():
         try:
-            fno = 0
+            fno = demo_start - 1 if fast_demo else 0
+            processed_count = 0
             while not stop_event.is_set():
                 ok, frame = cap.read()
                 if not ok:
                     break
+                fno += 1
+                if fast_demo and fno > demo_end:
+                    break
                 if needs_resize:
                     frame = cv2.resize(frame, (w, h), interpolation=cv2.INTER_AREA)
-                fno += 1
                 video_time = fno / source_fps
                 item = FrameItem(fno, video_time, frame, time.perf_counter())
+                processed_count += 1
+                if fast_demo and processed_count % 100 == 0:
+                    print(f"Fast demo progress: {processed_count} frames processed (source frame {fno})", flush=True)
                 # backpressure: block unless drop_frames mode
                 if drop_frames:
                     try:
@@ -2096,7 +2133,7 @@ def process_video(path: Path, common: YOLO, custom: YOLO, expert: PrologRiskEngi
                 if fresh_detection:
                     try:
                         if extractor_callable is not None:
-                            detections = extractor_callable(frame, polygon, path.stem, calibrator)
+                            detections = extractor_callable(frame, polygon, stream_id, calibrator)
                         else:
                             # Night/low-light frames get a contrast boost before
                             # object detection only (not lane-finding or the
@@ -2108,11 +2145,11 @@ def process_video(path: Path, common: YOLO, custom: YOLO, expert: PrologRiskEngi
                                 detect_frame = enhance_low_light(frame)
                                 stats.low_light_frames += 1
                             parts = [
-                                extract(common, detect_frame, "yolo11n", polygon, path.stem, calibrator),
-                                extract(custom, detect_frame, "best.pt", polygon, path.stem, calibrator),
+                                extract(common, detect_frame, "yolo11n", polygon, stream_id, calibrator),
+                                extract(custom, detect_frame, "best.pt", polygon, stream_id, calibrator),
                             ]
                             for extra_model, extra_source in (extra_models or []):
-                                parts.append(extract(extra_model, detect_frame, extra_source, polygon, path.stem, calibrator))
+                                parts.append(extract(extra_model, detect_frame, extra_source, polygon, stream_id, calibrator))
                             detections = deduplicate([d for part in parts for d in part])
                         if DEBUG_PERFORMANCE:
                             with _pipeline_lock:
@@ -2282,7 +2319,7 @@ def process_video(path: Path, common: YOLO, custom: YOLO, expert: PrologRiskEngi
     worker_t.start()
 
     # main writer loop: consume processed items and output in-order
-    next_frame = 1
+    next_frame = demo_start
     buffer: dict[int, ProcessedItem] = {}
     started = time.time()
     fps_started = time.time()
@@ -2566,6 +2603,12 @@ def process_video(path: Path, common: YOLO, custom: YOLO, expert: PrologRiskEngi
     elapsed = time.time() - started
     summary = {
         "video": path.name,
+        "video_id": canonical_video_id(path.name),
+        "fast_demo": fast_demo,
+        "source_frame_start": demo_start,
+        "source_frame_end": demo_end,
+        "source_frames": source_frame_count,
+        "source_duration_s": round(source_frame_count / source_fps, 3) if source_fps else 0.0,
         "frames": stats.frames,
         "total_detections": stats.total_detections,
         "risk_counts": dict(stats.level_counts),
@@ -2904,10 +2947,11 @@ def main() -> None:
     parser.add_argument("--drop-frames", action="store_true", help="Drop frames when processing cannot keep up (live mode)")
     parser.add_argument("--device", help="Inference device: cpu, mps, cuda (default: auto-detect fastest available)")
     parser.add_argument("--debug-performance", action="store_true", help="Print a per-stage timing breakdown after each video")
+    parser.add_argument("--fast-demo", action="store_true", help="Process an active eight-second preview without overwriting full outputs")
     args = parser.parse_args()
 
     global INFERENCE_DEVICE, DEBUG_PERFORMANCE
-    INFERENCE_DEVICE = select_device(args.device)
+    INFERENCE_DEVICE = "mps" if args.fast_demo else select_device(args.device)
     DEBUG_PERFORMANCE = args.debug_performance
     print(f"Inference device: {INFERENCE_DEVICE}")
 
@@ -2957,12 +3001,13 @@ def main() -> None:
             common,
             custom,
             expert,
-            not args.no_display,
-            not args.no_voice,
+            False if args.fast_demo else not args.no_display,
+            False if args.fast_demo else not args.no_voice,
             next_video_name=None,
             calibrator_config=calib_cfg,
             drop_frames=args.drop_frames,
             extra_models=extra_models,
+            fast_demo=args.fast_demo,
         )
         return
 

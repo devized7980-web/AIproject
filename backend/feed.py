@@ -88,11 +88,13 @@ class LiveFeed:
     def select(self, video_id: str) -> bool:
         with self.lock:
             if not any(v["id"] == video_id for v in self.store.videos):
+                print(f"[feed] rejected video_id={video_id}", flush=True)
                 return False
             self.video_id = video_id
             self.snapshot = self._blank_snapshot()
             self._ring.clear()
             self._alert_ring.clear()
+            print(f"[feed] selected video_id={video_id}", flush=True)
             return True
 
     def set_playing(self, playing: bool) -> None:
@@ -128,7 +130,9 @@ class LiveFeed:
             return [(0, [])]
         # Pad so the feed feels continuous even through empty stretches.
         seq: list[tuple[int, list[dict]]] = []
-        last = 0
+        # A fast-demo CSV keeps absolute source frame numbers. Do not fabricate
+        # empty frames from frame 1 up to the selected preview window.
+        last = frames[0]
         for f in frames:
             if f - last > 2:
                 for gap in range(last + 1, f):
@@ -197,7 +201,12 @@ class LiveFeed:
                 "track_id": r.get("track_id"),
             })
 
-        state = {"level": "SAFE", "action": "ROAD CLEAR — CONTINUE CAREFULLY"}
+        available = video.get("readiness_status") == "READY"
+        state = (
+            {"level": "SAFE", "action": "ROAD CLEAR — CONTINUE CAREFULLY"}
+            if available else
+            {"level": "UNAVAILABLE", "action": video.get("readiness_reason") or video.get("readiness_status", "UNAVAILABLE")}
+        )
         if worst is not None:
             state = {"level": worst["risk"], "action": worst["action"].upper()}
 
@@ -255,6 +264,7 @@ class LiveFeed:
             snap["ring"]["vehicles"] = list(self._ring["vehicles"])
             snap["ring"]["persons"] = list(self._ring["persons"])
             snap["ts"] = int(now * 1000)
+            print(f"[feed] video_id={video['id']} frame={frame_no} source_fps={source_fps:.6f} rows={len(rows)} boxes={len(detections)}", flush=True)
             return dict(snap)
 
 

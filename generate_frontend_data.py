@@ -17,6 +17,7 @@ from collections import defaultdict
 from pathlib import Path
 
 import cv2
+from video_identity import RAW_EXTENSIONS, canonical_video_id, output_stem
 
 try:
     import imageio_ffmpeg
@@ -33,8 +34,6 @@ GEN_MODULE = FRONTEND / "src" / "videos.generated.js"
 # server; keep them small so the gallery stays snappy.
 THUMB_W = 640
 THUMB_Q = 78
-
-LISTED_EXTENSIONS = (".mp4", ".mov", ".avi", ".mkv", ".MP4", ".MOV")
 
 LEVEL_PRIORITY = {"SAFE": 0, "CAUTION": 1, "WARNING": 2, "CRITICAL": 3}
 
@@ -233,14 +232,12 @@ def overall_risk(risk_counts: dict) -> str:
 def resolve_raw_file(stem: str) -> str:
     """Return the on-disk raw camera clip name for a processed-video stem.
 
-    The summary's ``video`` key can hold a renamed presentation name that does
-    not match the actual file in the videos/ folder, so resolve the real file
-    by prefix-matching against the clips that exist on disk."""
+    Resolve the real file by exact output stem, never partial matching."""
     if not (ROOT / "videos").exists():
         return stem
     candidates = sorted(
         (p.name for p in (ROOT / "videos").iterdir()
-         if p.suffix in LISTED_EXTENSIONS and p.name.startswith(stem)),
+         if p.suffix.lower() in RAW_EXTENSIONS and output_stem(p.name) == stem),
     )
     return candidates[0] if candidates else stem
 
@@ -280,8 +277,16 @@ def main() -> None:
     PUBLIC_VIDEOS.mkdir(parents=True, exist_ok=True)
     videos = []
 
-    for summary_path in sorted(OUTPUT.glob("*_summary.json")):
+    summary_paths = sorted(OUTPUT.glob("*_summary.json"))
+    fast_sources = {
+        json.loads(path.read_text(encoding="utf-8")).get("video")
+        for path in summary_paths
+        if "fast_demo" in path.stem
+    }
+    for summary_path in summary_paths:
         summary = json.loads(summary_path.read_text(encoding="utf-8"))
+        if summary.get("video") in fast_sources and not summary.get("fast_demo"):
+            continue
         stem = summary_path.name.replace("_summary.json", "")
         csv_path = OUTPUT / f"{stem}_detections.csv"
         src_video = OUTPUT / f"{stem}_advanced.mp4"
@@ -293,7 +298,7 @@ def main() -> None:
         with csv_path.open(newline="", encoding="utf-8") as f:
             rows = list(csv.DictReader(f))
 
-        raw_name = resolve_raw_file(stem)
+        raw_name = summary.get("video") or resolve_raw_file(stem)
         raw_video = ROOT / "videos" / str(raw_name)
         cap = cv2.VideoCapture(str(raw_video if raw_video.exists() else src_video))
         w = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH)) or 1280
@@ -321,7 +326,7 @@ def main() -> None:
         make_thumb(src_video, PUBLIC_VIDEOS / thumb_name, events, duration)
 
         videos.append({
-            "id": f"video_{len(videos) + 1}",
+            "id": canonical_video_id(raw_name),
             "title": meta.get("title", stem.replace("_", " ").title()),
             "file": dest_name,
             "raw": str(raw_name),
@@ -331,6 +336,8 @@ def main() -> None:
             "duration": mmss(duration),
             "frames": summary.get("frames", 0),
             "source_fps": round(source_fps, 6),
+            "fast_demo": bool(summary.get("fast_demo")),
+            "source_frame_start": summary.get("source_frame_start", 1),
             "total_detections": sum(object_counts.values()),
             "incidents": summary.get("incidents", 0),
             "minimum_ttc_s": summary.get("minimum_ttc_s"),

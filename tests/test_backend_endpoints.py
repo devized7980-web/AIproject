@@ -33,7 +33,7 @@ class BackendEndpointTests(unittest.TestCase):
         video = next((v for v in server.videos() if not v["analysis_available"]), None)
         if video is None:
             self.skipTest("fixture catalogue has no unanalysed video")
-        self.assertEqual(video["processing_status"], "not_analysed")
+        self.assertEqual(video["processing_status"], "NOT_PROCESSED")
         self.assertEqual(video["events"], [])
         self.assertEqual(video["total_detections"], 0)
         self.assertEqual(server.video_frames(video["id"])["frames"], [])

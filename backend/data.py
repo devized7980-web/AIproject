@@ -10,6 +10,8 @@ from collections import defaultdict
 from pathlib import Path
 from typing import SupportsFloat
 
+from video_identity import RAW_EXTENSIONS, canonical_video_id, output_stem
+
 ROOT = Path(__file__).resolve().parent.parent
 OUTPUT = ROOT / "output"
 PUBLIC_VIDEOS = ROOT / "frontend" / "public" / "videos"
@@ -56,17 +58,18 @@ META = {
     },
 }
 
-RAW_EXTENSIONS = {".mp4", ".mov", ".avi", ".mkv", ".m4v", ".wmv"}
-
-
 def resolve_raw_file(stem: str) -> str:
     """Find the real on-disk raw clip for a processed-video stem.
 
-    The summary's ``video`` field can hold a renamed presentation name that does
-    not match the actual file, so prefix-match against the clips in videos/."""
+    Match the pipeline's exact output stem, never a partial filename.
+    """
     try:
         entries = [p.name for p in (ROOT / "videos").iterdir()
-                   if p.suffix in RAW_EXTENSIONS and p.name.startswith(stem)]
+                   if p.suffix.lower() in RAW_EXTENSIONS and output_stem(p.name) == stem]
+        if not entries:
+            entries = [p.name for p in (ROOT / "videos").iterdir()
+                       if p.suffix.lower() in RAW_EXTENSIONS
+                       and output_stem(p.name).casefold() == stem.casefold()]
     except OSError:
         return stem
     return sorted(entries, key=str.casefold)[0] if entries else stem
@@ -188,10 +191,10 @@ def build_events(rows: list[dict], duration: float, w: int, h: int) -> list[dict
 
 
 def _track_id(value: object) -> str | None:
-    """Expose the stable local identity without leaking stream keys."""
+    """Expose a stable per-video identity without leaking the source filename."""
     if not value:
         return None
-    return str(value).rsplit(":", 1)[-1] or None
+    return str(value).split(":", 1)[-1] or None
 
 
 def _incident_reference(value: object) -> str | None:
@@ -221,23 +224,29 @@ class DataStore:
         except OSError:
             raw_files = []
 
-        summaries: dict[str, tuple[str, dict]] = {}
+        raw_names = {p.name for p in raw_files}
+        summaries: dict[str, list[tuple[str, dict]]] = {}
         for summary_path in sorted(self.output.glob("*_summary.json"), key=lambda p: p.name.casefold()):
             try:
                 stem = summary_path.name.removesuffix("_summary.json")
                 summary = json.loads(summary_path.read_text(encoding="utf-8"))
-                raw_name = resolve_raw_file(stem)
-                if raw_name in {p.name for p in raw_files}:
-                    summaries[raw_name] = (stem, summary)
+                raw_name = summary.get("video")
+                if raw_name in raw_names:
+                    summaries.setdefault(raw_name, []).append((stem, summary))
             except (json.JSONDecodeError, OSError):
                 continue
 
         for raw_path in raw_files:
             raw_name = raw_path.name
             meta = META.get(raw_name, {})
-            stem, summary = summaries.get(raw_name, ("", {}))
-            csv_path = self.output / f"{stem}_detections.csv" if stem else None
-            processed_path = self.output / f"{stem}_advanced.mp4" if stem else None
+            source_stem = output_stem(raw_name)
+            candidates = summaries.get(raw_name, [])
+            selected = next((item for item in reversed(candidates) if item[1].get("fast_demo")), None)
+            selected = selected or next((item for item in candidates if item[0] == source_stem), None)
+            stem, summary = selected or (source_stem, {})
+            summary_matches_source = bool(summary and summary.get("video") == raw_name)
+            csv_path = self.output / f"{stem}_detections.csv"
+            processed_path = self.output / f"{stem}_advanced.mp4"
             csv_available = bool(csv_path and csv_path.is_file())
             # The frontend serves processed clips from the public mount. An
             # output file alone is not enough to advertise a playable URL.
@@ -246,7 +255,7 @@ class DataStore:
             )
             processed_available = bool(processed_path and processed_path.is_file()
                                        and served_processed and served_processed.is_file())
-            analysis_available = bool(stem and summary and csv_available)
+            analysis_available = bool(summary and summary_matches_source and csv_available)
             clean: list[dict] = []
             if csv_available and csv_path is not None:
                 try:
@@ -266,8 +275,18 @@ class DataStore:
                 int(_f(summary.get("height"), 720)),
             )
             source_fps = self._video_fps(raw_name, 30.0)
+            source_duration, source_frames = self._raw_duration(raw_name, source_fps)
+            status = "READY"
+            status_reason = ""
+            invalid_rows = 0
             if analysis_available:
+                before_validation = len(clean)
+                clean = [r for r in clean if self._valid_detection_row(r, source_frames, source_fps, w, h)]
+                invalid_rows = before_validation - len(clean)
                 clean = [r for r in clean if not _is_ego_row(r, w, h)]
+                if invalid_rows:
+                    status = "DATA MISMATCH"
+                    status_reason = f"{invalid_rows} detection rows have invalid frame, timestamp, or coordinates."
             object_counts: dict[str, int] = {}
             risk_counts: dict[str, int] = {}
             for row in clean:
@@ -280,12 +299,24 @@ class DataStore:
             duration_s = max((_f(r.get("video_time_s")) for r in clean), default=0.0)
             frames = int(_f(summary.get("frames"))) if analysis_available else 0
             if not analysis_available:
-                duration_s, frames = self._raw_duration(raw_name, source_fps)
+                duration_s, frames = source_duration, source_frames
+            if not summary:
+                status = "NOT_PROCESSED"
+                status_reason = "Missing or mismatched summary JSON."
+            elif not csv_available:
+                status = "NOT_PROCESSED"
+                status_reason = "Missing detection CSV."
+            elif not processed_path or not processed_path.is_file():
+                status = "OUTPUT_MISSING"
+                status_reason = "Detection records exist but the processed video is missing."
+            elif not clean:
+                status = "NO_DETECTIONS"
+                status_reason = "Processing completed and the model produced zero valid detections."
             events = build_events(clean, duration_s, w, h) if analysis_available else []
             finite_ttc = [_f(r.get("ttc_s"), math.inf) for r in clean]
             minimum_ttc = min((v for v in finite_ttc if math.isfinite(v)), default=None)
             has_alerting_row = any(LEVEL_PRIORITY.get(r.get("risk", "SAFE"), 0) >= 2 for r in clean)
-            vid = f"video_{len(self.videos) + 1}"
+            vid = canonical_video_id(raw_name)
             video = {
                 "id": vid,
                 "title": meta.get("title", raw_path.stem.replace("_", " ").title()),
@@ -294,8 +325,17 @@ class DataStore:
                 "thumb": f"{stem}_thumb.jpg" if stem and (ROOT / "frontend" / "public" / "videos" / f"{stem}_thumb.jpg").is_file() else None,
                 "raw_available": True,
                 "processed_available": processed_available,
+                "fast_demo": bool(summary.get("fast_demo")),
                 "analysis_available": analysis_available,
-                "processing_status": "analysed" if analysis_available else "not_analysed",
+                "processing_status": status,
+                "readiness_status": status,
+                "readiness_reason": status_reason,
+                "detection_csv": str(csv_path.relative_to(ROOT)) if csv_path else None,
+                "summary_json": str((self.output / f"{stem}_summary.json").relative_to(ROOT)),
+                "processed_path": str(processed_path.relative_to(ROOT)),
+                "csv_row_count": len(clean),
+                "invalid_detection_rows": invalid_rows,
+                "unique_track_count": len({r.get("track_key") for r in clean if r.get("track_key")}),
                 "location": meta.get("location", "Untagged route"),
                 "weather": meta.get("weather", "Unknown"),
                 "duration": mmss(duration_s),
@@ -311,7 +351,7 @@ class DataStore:
                 "risk_counts": risk_counts if analysis_available else {},
                 "object_counts": object_counts if analysis_available else {},
                 "noise_counts": noise_counts if analysis_available else {},
-                "overall_risk": overall_risk(risk_counts) if analysis_available else "SAFE",
+                "overall_risk": overall_risk(risk_counts) if analysis_available else "UNAVAILABLE",
                 "events": events,
                 "raw_name": raw_name,
                 "stem": stem or None,
@@ -342,6 +382,23 @@ class DataStore:
             key=lambda a: (LEVEL_PRIORITY.get(a["level"], 0), a["video_id"]),
             reverse=True,
         )
+
+    @staticmethod
+    def _valid_detection_row(row: dict, source_frames: int, fps: float, width: int, height: int) -> bool:
+        try:
+            frame = int(float(row.get("frame", "")))
+            timestamp = float(row.get("video_time_s", ""))
+            coords = [float(row[k]) for k in ("x1", "y1", "x2", "y2")]
+        except (KeyError, TypeError, ValueError):
+            return False
+        if frame < 1 or (source_frames and frame > source_frames):
+            return False
+        if not math.isfinite(timestamp) or timestamp < 0:
+            return False
+        if fps > 0 and abs(timestamp - (frame / fps)) > max(0.25, 2.0 / fps):
+            return False
+        x1, y1, x2, y2 = coords
+        return all(math.isfinite(v) for v in coords) and 0 <= x1 < x2 <= width and 0 <= y1 < y2 <= height
 
     def _video_size(self, stem: str, default_w: int, default_h: int) -> tuple[int, int]:
         try:
