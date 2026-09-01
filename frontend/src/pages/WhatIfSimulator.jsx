@@ -142,7 +142,7 @@ export default function WhatIfSimulator({ videos }) {
               <li>Slide speed to <b>70 km/h</b> → TTC ≈ 1.0 s, decision becomes CRITICAL.</li>
               <li>Add <b>wetness</b> → the risk score climbs even at the same speed.</li>
               <li>Drop lane position below 50% → object is outside the lane, safe again.</li>
-              <li>Show the fired rule in the <b>AI Explainer</b> for the “why”.</li>
+               <li>Read the inline <b>Why this alert?</b> rule trace above for the “why”.</li>
             </ol>
           </Panel>
         </div>

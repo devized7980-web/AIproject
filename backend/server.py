@@ -89,11 +89,31 @@ def startup() -> None:
 @app.on_event("shutdown")
 def shutdown() -> None:
     feed.stop()
+    feed.join()
+    bench_mod.BENCH.stop()
 
 
 # ──────────────────────────────────────────────────────────────── health
 @app.get("/api/health")
 def health() -> dict:
+    snapshot = feed.get_snapshot()
+    model_status = {
+        "common": "Running" if (ROOT / "models" / "yolo11n.pt").is_file() else "Offline",
+        "road_damage": "Running" if (ROOT / "models" / "best.pt").is_file() else "Offline",
+    }
+    prolog_status = "Running" if ENGINE.available else "Degraded"
+    feed_status = "Running" if feed._thread is not None and feed._thread.is_alive() else "Degraded"
+    backend_status = "Running" if STORE.videos else "Degraded"
+    try:
+        import torch
+        device = "CUDA" if torch.cuda.is_available() else "MPS" if torch.backends.mps.is_available() else "CPU"
+    except Exception:
+        device = "CPU"
+    try:
+        import pyttsx3  # noqa: F401
+        tts_available = True
+    except Exception:
+        tts_available = False
     return {
         "ok": True,
         "prolog": ENGINE.available,
@@ -101,6 +121,16 @@ def health() -> dict:
         "feed": feed.video_id,
         "benchmark_running": bench_mod.BENCH.running,
         "benchmark_ready": bench_mod.BENCH.results is not None,
+        "status": backend_status,
+        "models": model_status,
+        "device": device,
+        "last_inference": snapshot.get("ts") or None,
+        "processing_fps": next((v["average_processing_fps"] for v in STORE.videos if v.get("average_processing_fps")), None),
+        "tracking": {"bytetrack": "Running", "kalman": "Running", "active_tracks": len({d.get("track_id") for d in snapshot.get("detections", []) if d.get("track_id")}), "rejected_associations": None, "deleted_tracks": None, "frame_sync": "Running" if snapshot.get("video_id") else "Degraded"},
+        "reasoning": {"prolog": prolog_status, "python_fallback": "Running", "loaded_rules": 13, "last_rule": snapshot.get("state", {}).get("action"), "decision_source": "prolog" if ENGINE.available else "python_fallback"},
+        "alerts_health": {"voice_enabled": False, "tts_available": tts_available, "latest_level": snapshot.get("state", {}).get("level", "SAFE"), "queued_alerts": 0},
+        "services": {"fastapi": "Running", "websocket": feed_status, "raw_video": "Running", "output_data": "Running" if STORE.videos else "Degraded", "model_benchmark": "Running" if bench_mod.BENCH.running else ("Degraded" if bench_mod.BENCH.error else "Running")},
+        "feed_mode": "Recorded detection replay",
     }
 
 
@@ -138,6 +168,8 @@ async def ws_endpoint(ws: WebSocket) -> None:
                 msg = json.loads(raw)
                 if msg.get("type") == "select_video":
                     feed.select(msg.get("video_id", ""))
+                elif msg.get("type") == "playback":
+                    feed.set_playing(msg.get("playing", False))
                 elif msg.get("type") == "ping":
                     await ws.send_text('{"type":"pong"}')
     except WebSocketDisconnect:
@@ -168,7 +200,8 @@ def alert_action(alert_id: str, body: AlertAction) -> dict:
         state["status"] = "resolved"
     elif body.action == "assign":
         state["assignee"] = body.assignee or "unassigned"
-        if state.get("status") == "open":
+        current_status = state.get("status", next(a for a in STORE.alerts if a["id"] == alert_id)["status"])
+        if current_status == "open":
             state["status"] = "acknowledged"
     return _alert_row(next(a for a in STORE.alerts if a["id"] == alert_id))
 
@@ -316,13 +349,13 @@ def prolog_trace(body: TraceRequest) -> dict:
 
 class SimulateRequest(BaseModel):
     object: str = "pothole"
-    speed_kmh: float = 50.0
-    distance_m: float = 12.0
-    wetness: float = 0.0            # 0 dry .. 1 flooded
-    visibility: float = 1.0         # 0 fog .. 1 clear
-    lane_position: float = 1.0      # 0 outside lane .. 1 dead centre
-    confidence: float = 0.6
-    box_height_ratio: float = 0.2
+    speed_kmh: float = Field(default=50.0, ge=0.0, le=300.0)
+    distance_m: float = Field(default=12.0, gt=0.0, le=1000.0)
+    wetness: float = Field(default=0.0, ge=0.0, le=1.0)
+    visibility: float = Field(default=1.0, gt=0.0, le=1.0)
+    lane_position: float = Field(default=1.0, ge=0.0, le=1.0)
+    confidence: float = Field(default=0.6, ge=0.0, le=1.0)
+    box_height_ratio: float = Field(default=0.2, ge=0.0, le=1.0)
 
 
 def _context_factor(sim: SimulateRequest) -> float:
@@ -364,7 +397,7 @@ def simulate(body: SimulateRequest) -> dict:
 def raw_video(filename: str) -> FileResponse:
     safe = Path(filename).name
     path = ROOT / "videos" / safe
-    if not path.exists() or path.suffix.lower() not in {".mp4", ".mov", ".avi", ".mkv"}:
+    if not path.is_file() or path.suffix.lower() not in {".mp4", ".mov", ".avi", ".mkv", ".m4v", ".wmv"}:
         raise HTTPException(404, "not found")
     return FileResponse(path, media_type="video/mp4")
 

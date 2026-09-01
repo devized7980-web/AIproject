@@ -35,10 +35,10 @@ function buildReport(video, ev, engine) {
     `  TTC      : ${fmtTtc(ev.ttc_s)}`,
     `  Decision : ${ev.action}`,
     "",
-    "PROLOG REASONING",
-    `  Rule     : ${ev.label}`,
-    "  The observation was asserted into the Prolog knowledge base and the",
-    "  first matching rule (highest priority) fired to produce the decision.",
+    "RULE REASONING",
+    `  Engine   : ${engine}`,
+    `  Rule     : ${ev.rule_id || ev.label}`,
+    `  Why      : ${ev.explanation || ev.label}`,
     "",
     "ACTION",
     "  " + (ev.level === "CRITICAL" ? "Brake / avoid immediately." : ev.level === "WARNING" ? "Slow down and prepare to avoid." : "Remain cautious."),
@@ -53,6 +53,7 @@ export default function IncidentReplay({ videos }) {
   const [videoId, setVideoId] = useState(all[0]?.id);
   const selected = all.find((v) => v.id === videoId) || all[0];
   const video = selected ? { ...selected, events: Array.isArray(selected.events) ? selected.events : [] } : null;
+  const analysed = video?.analysis_available !== false;
 
   const [active, setActive] = useState(0);
   const [playing, setPlaying] = useState(false);
@@ -81,12 +82,12 @@ export default function IncidentReplay({ videos }) {
     setCurrentTime(0);
     setReport(null);
     setVideoError(false);
-    setUsingProcessed(!video?.raw);
-    setSrc(video?.raw ? `/raw/${video.raw}` : video?.file ? `/videos/${video.file}` : "");
+     setUsingProcessed(Boolean(video?.processed_available));
+     setSrc(video?.processed_available && video?.file ? `/videos/${video.file}` : video?.raw ? `/raw/${video.raw}` : "");
     if (!video?.id) return () => { current = false; };
-    getVideoFrames(video.id).then((d) => { if (current) setFrames(Array.isArray(d?.frames) ? d.frames : []); });
+     getVideoFrames(video.id).then((d) => { if (current) setFrames(analysed && Array.isArray(d?.frames) ? d.frames : []); });
     return () => { current = false; };
-  }, [video?.id]);
+   }, [video?.id, analysed]);
 
   const ev = video?.events?.[active];
 
@@ -153,7 +154,7 @@ export default function IncidentReplay({ videos }) {
   }, [ev, rawMode, currentTime, active]);
 
   const generate = () => {
-    const text = buildReport(video, ev, "YOLO11n + best.pt + SWI-Prolog");
+     const text = buildReport(video, ev, ev.decision_source === "prolog" ? "SWI-Prolog" : "Python fallback");
     setReport(text);
     const blob = new Blob([text], { type: "text/plain;charset=utf-8" });
     const url = URL.createObjectURL(blob);
@@ -211,15 +212,18 @@ export default function IncidentReplay({ videos }) {
                   onPlay={() => setPlaying(true)}
                   onPause={() => setPlaying(false)}
                    onError={() => {
-                     if (src.startsWith("/raw/") && video.file) {
+                      if (src.startsWith("/videos/") && video.raw) {
+                        setUsingProcessed(false);
+                        setSrc(`/raw/${video.raw}`);
+                      } else if (src.startsWith("/raw/") && video.file && video.processed_available) {
                        setUsingProcessed(true);
                        setSrc(`/videos/${video.file}`);
                      }
                      else setVideoError(true);
                    }}
                  />
-               ) : <div className="sw-empty">Processed video unavailable for this clip.</div>}
-               {!usingProcessed && boxes.map((b, i) => (
+                ) : <div className="sw-empty">{analysed ? "Video unavailable for this clip." : "Not analysed yet. Raw video is unavailable."}</div>}
+                {analysed && boxes.map((b, i) => (
                 <span
                   key={i}
                   className="sw-dbox"
@@ -302,19 +306,23 @@ export default function IncidentReplay({ videos }) {
           </Panel>
 
           <Panel title="Investigation detail" right={<Tag level={ev?.level} />}>
-            <div className="sw-detail">
+             <div className="sw-detail">
               <div className="row"><span>Detection</span><b style={{ textTransform: "capitalize" }}>{ev?.object}</b></div>
               <div className="row"><span>Severity</span><b style={{ color: levelColor(ev?.level) }}>{ev?.level}</b></div>
               <div className="row"><span>Distance</span><b>{ev?.distance_m} m</b></div>
               <div className="row"><span>TTC</span><b>{fmtTtc(ev?.ttc_s)}</b></div>
               <div className="row"><span>Confidence</span><b>{Math.round(ev?.confidence * 100)}%</b></div>
               <div className="row"><span>Decision</span><b className="sw-truncate">{ev?.action}</b></div>
-            </div>
-            <div className="sw-reportnote">
+             </div>
+             {ev && <div className="sw-note" style={{ marginTop: 12 }}>
+               <b>Why this alert?</b><br />
+               {ev.rule_id || "No rule ID recorded"}: {ev.explanation || "No explanation recorded."}
+               {ev.decision_trace && <><br /><small>Trace: {ev.decision_trace}</small></>}
+             </div>}
+             <div className="sw-reportnote">
               <Activity size={14} style={{ color: "var(--gold)" }} />
               <span>
-                This decision came from the Prolog expert system. Open the{" "}
-                <b>AI Explainer</b> to see exactly which rule fired and why.
+               This decision came from the recorded pipeline. The rule trace is included in the incident data.
               </span>
             </div>
             <button className="sw-reportbtn" onClick={generate} disabled={!ev}><FileText size={15} /> Generate incident report</button>
@@ -331,7 +339,7 @@ export default function IncidentReplay({ videos }) {
 
           <Panel title="Evidence" right={<span className="sw-eyebrow"><Download size={11} /> saved frames</span>}>
             <div className="sw-eyebrow" style={{ padding: "6px 0" }}>
-              {video.incidents} incident images were written to output/incidents during this run.
+               {analysed ? `${video.incidents} incident images were written during this run.` : "Not analysed yet. No incident images or detection statistics are available."}
             </div>
           </Panel>
         </div>

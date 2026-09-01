@@ -30,7 +30,6 @@ function simTick(video, idx, prev) {
     persons: detections.filter((d) => d.name === "person").length,
     total: detections.length,
   };
-  const fps = +(4.3 + Math.random() * 0.9).toFixed(2);
   const state = ev && ev.level ? { level: ev.level, action: ev.action } : { level: "SAFE", action: "ROAD CLEAR — CONTINUE CAREFULLY" };
 
   const cum = prev.cumulative || { frames: 0, detections: 0, alerts: 0 };
@@ -63,8 +62,10 @@ function simTick(video, idx, prev) {
     frame: idx % frames,
     video_time: (idx % frames) / 30,
     duration: frames / 30,
-    fps,
-    latency_ms: +(1000 / fps + Math.random() * 10).toFixed(1),
+    fps: +(1000 / TICK_MS).toFixed(2),
+    replay_speed_fps: +(1000 / TICK_MS).toFixed(2),
+    latency_ms: null,
+    feed_mode: "Recorded detection replay",
     state,
     counts,
     detections,
@@ -103,6 +104,8 @@ export function useLiveFeed({ videoId, video: selectedVideo, enabled = true }) {
   const [feed, setFeed] = useState(null);
   const [mode, setMode] = useState("connecting");
   const videoIdRef = useRef(videoId);
+  const playingRef = useRef(true);
+  const controlRef = useRef(() => {});
   videoIdRef.current = videoId;
 
   const onMessage = useRef((msg) => {
@@ -117,6 +120,13 @@ export function useLiveFeed({ videoId, video: selectedVideo, enabled = true }) {
     let ws = null;
     let alive = true;
     let simTimer = null;
+    const setPlaying = (playing) => {
+      playingRef.current = playing;
+      if (ws && ws.readyState === WebSocket.OPEN) {
+        ws.send(JSON.stringify({ type: "playback", playing }));
+      }
+    };
+    controlRef.current = setPlaying;
 
     const startSim = () => {
       if (!alive) return;
@@ -124,8 +134,9 @@ export function useLiveFeed({ videoId, video: selectedVideo, enabled = true }) {
       const video = emptyVideo(selectedVideo || VIDEOS.find((v) => v.id === videoIdRef.current) || VIDEOS[0]);
       let idx = Math.floor(video.frames * 0.25);
       let prev = {};
-      simTimer = setInterval(() => {
-        idx += 1;
+       simTimer = setInterval(() => {
+         if (!playingRef.current) return;
+         idx += 1;
         const msg = simTick(video, idx, prev);
         prev = msg;
         onMessage.current(msg);
@@ -144,8 +155,9 @@ export function useLiveFeed({ videoId, video: selectedVideo, enabled = true }) {
       ws = new WebSocket(`${location.protocol === "https:" ? "wss" : "ws"}://${location.host}/ws`);
       ws.onopen = () => {
         if (!alive) return;
-        setMode("live");
-        ws.send(JSON.stringify({ type: "select_video", video_id: videoIdRef.current }));
+         setMode("live");
+         ws.send(JSON.stringify({ type: "select_video", video_id: videoIdRef.current }));
+         ws.send(JSON.stringify({ type: "playback", playing: playingRef.current }));
       };
       ws.onmessage = (e) => {
         try {
@@ -165,11 +177,12 @@ export function useLiveFeed({ videoId, video: selectedVideo, enabled = true }) {
 
     return () => {
       alive = false;
+      controlRef.current = () => {};
       clearInterval(selectTimer);
       if (simTimer) clearInterval(simTimer);
       try { ws && ws.close(); } catch { /* noop */ }
     };
   }, [videoId, selectedVideo, enabled]);
 
-  return { feed, mode };
+  return { feed, mode, setPlaying: (playing) => controlRef.current(playing) };
 }

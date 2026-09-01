@@ -102,6 +102,9 @@ EGO_ROI_X1 = 0.25
 EGO_ROI_X2 = 0.75
 EGO_ROI_Y1 = 0.78
 EGO_OVERLAP_MIN_RATIO = 0.25
+EGO_MIN_WIDTH_RATIO = 0.45
+EGO_MIN_TOP_RATIO = 0.68
+EGO_MIN_BOTTOM_RATIO = 0.96
 
 # Forget a track after it has not been seen for this many detection cycles.
 TRACK_FORGET_AFTER = 20
@@ -156,7 +159,8 @@ LEVEL_COLORS = {
 TRAFFIC_CONTROLS = {"traffic light", "stop sign", "parking meter"}
 PERSON_CLASSES = {"person"}
 VEHICLE_CLASSES = {"car", "truck", "bus", "motorcycle", "bicycle"}
-ROAD_DAMAGE_CLASSES = {"pothole", "road crack", "road_crack", "crack"}
+ROAD_DAMAGE_CLASSES = {"pothole", "road crack", "road_crack", "crack",
+                       "longitudinal", "transverse", "alligator"}
 ANIMAL_CLASSES = {"dog", "cat", "cow", "horse", "sheep", "bird"}
 OBSTACLE_CLASSES = {"tree", "fallen_tree", "fallen tree", "obstacle", "cone",
                      "barrier", "debris", "log", "branch"}
@@ -569,30 +573,32 @@ def _fallback_decision_rules(d: Detection) -> Decision:
     name = d.name.lower()
     # Return structured decision fields: (risk, action_display, rule_id, explanation, decision_source)
     if not d.in_lane:
-        return ("SAFE", f"{name} OUTSIDE VEHICLE LANE", "outside_vehicle_lane_py", f"Object '{name}' is outside the vehicle lane and not an immediate collision threat.", "python_fallback")
-    if name in TRAFFIC_CONTROLS:
-        return ("CAUTION", f"OBSERVE {name}", "observe_traffic_control_py", f"Traffic control '{name}' observed; monitor for signals or stops.", "python_fallback")
+        return ("SAFE", "OUTSIDE VEHICLE LANE", "object_outside_vehicle_lane", f"Object '{name}' is outside the vehicle lane and not an immediate collision threat.", "python_fallback")
+    if d.confidence < 0.30:
+        return ("SAFE", f"{name} AT SAFE DISTANCE", "object_at_safe_distance", "Detection confidence is below the rule threshold.", "python_fallback")
     if d.ttc_s <= 1.5 or d.distance_m <= 3.0 or d.box_height_ratio >= 0.52:
         if name in PERSON_CLASSES:
-            return ("CRITICAL", "BRAKE IMMEDIATELY - PERSON AHEAD", "brake_immediately_person_ahead_py", "Immediate braking required due to person in lane.", "python_fallback")
+            return ("CRITICAL", "BRAKE IMMEDIATELY PERSON AHEAD", "brake_immediately_person_ahead", "Immediate braking required due to person in lane.", "python_fallback")
         if name in ROAD_DAMAGE_CLASSES:
-            return ("CRITICAL", "BRAKE AND AVOID ROAD DAMAGE", "brake_and_avoid_road_damage_py", "Immediate maneuver to avoid road damage is required.", "python_fallback")
+            return ("CRITICAL", "BRAKE AND AVOID ROAD DAMAGE", "brake_and_avoid_road_damage", "Immediate maneuver to avoid road damage is required.", "python_fallback")
         if name in OBSTACLE_CLASSES:
-            return ("CRITICAL", "BRAKE AND AVOID OBSTACLE", "brake_and_avoid_obstacle_py", f"Immediate maneuver to avoid obstacle '{name}' in lane is required.", "python_fallback")
-        return ("CRITICAL", f"BRAKE NOW - {name} TOO CLOSE", "brake_now_object_too_close_py", f"Object '{name}' detected very close; brake immediately.", "python_fallback")
+            return ("CRITICAL", "BRAKE AND AVOID OBSTACLE", "brake_and_avoid_obstacle", f"Immediate maneuver to avoid obstacle '{name}' in lane is required.", "python_fallback")
+        return ("CRITICAL", "BRAKE NOW OBJECT TOO CLOSE", "brake_now_object_too_close", f"Object '{name}' detected very close; brake immediately.", "python_fallback")
+    if name in TRAFFIC_CONTROLS:
+        return ("CAUTION", f"OBSERVE {name}", "observe_traffic_control", f"Traffic control '{name}' observed; monitor for signals or stops.", "python_fallback")
     if d.ttc_s <= 3.0 or d.distance_m <= 7.0 or d.box_height_ratio >= 0.32:
         if name in VEHICLE_CLASSES:
-            return ("WARNING", "SLOW DOWN AND INCREASE FOLLOWING DISTANCE", "vehicle_following_distance_py", "Reduce speed and increase following distance to maintain safe gap.", "python_fallback")
+            return ("WARNING", "SLOW DOWN AND INCREASE FOLLOWING DISTANCE", "vehicle_following_distance", "Reduce speed and increase following distance to maintain a safe gap.", "python_fallback")
         if name in ANIMAL_CLASSES:
-            return ("WARNING", "SLOW DOWN - ANIMAL AHEAD", "animal_warning_py", "Animal detected near lane; slow down and proceed cautiously.", "python_fallback")
+            return ("WARNING", "SLOW DOWN ANIMAL AHEAD", "animal_warning", "Animal detected near lane; slow down and proceed cautiously.", "python_fallback")
         if name in ROAD_DAMAGE_CLASSES:
-            return ("WARNING", "SLOW DOWN AND PREPARE TO AVOID ROAD DAMAGE", "road_damage_warning_py", "Road damage ahead; slow down and prepare to avoid.", "python_fallback")
+            return ("WARNING", "SLOW DOWN AND PREPARE TO AVOID ROAD DAMAGE", "road_damage_warning", "Road damage ahead; slow down and prepare to avoid.", "python_fallback")
         if name in OBSTACLE_CLASSES:
-            return ("WARNING", "SLOW DOWN - OBSTACLE AHEAD", "obstacle_warning_py", f"Obstacle '{name}' ahead in lane; slow down and prepare to avoid.", "python_fallback")
-        return ("WARNING", f"SLOW DOWN - {name} AHEAD", "generic_warning_py", f"Slow down: {name} detected ahead in the vehicle lane.", "python_fallback")
+            return ("WARNING", "SLOW DOWN AND PREPARE TO AVOID OBSTACLE", "obstacle_warning", f"Obstacle '{name}' ahead in lane; slow down and prepare to avoid.", "python_fallback")
+        return ("WARNING", "SLOW DOWN HAZARD AHEAD", "generic_warning", f"Slow down: {name} detected ahead in the vehicle lane.", "python_fallback")
     if d.ttc_s <= 5.0 or d.distance_m <= 14.0 or d.box_height_ratio >= 0.17:
-        return ("CAUTION", f"CAUTION - {name} IN VEHICLE LANE", "caution_object_in_vehicle_lane_py", f"Object '{name}' detected in vehicle lane; exercise caution.", "python_fallback")
-    return ("SAFE", f"{name} AT SAFE DISTANCE", "object_at_safe_distance_py", f"Object '{name}' is at a safe distance.", "python_fallback")
+        return ("CAUTION", "CAUTION OBJECT IN VEHICLE LANE", "caution_object_in_vehicle_lane", f"Object '{name}' detected in vehicle lane; exercise caution.", "python_fallback")
+    return ("SAFE", "OBJECT AT SAFE DISTANCE", "object_at_safe_distance", f"Object '{name}' is at a safe distance.", "python_fallback")
 
 
 def is_valid_bbox(box: Any, frame_shape: tuple[int, int] | None = None) -> bool:
@@ -1038,14 +1044,15 @@ class DetectionSmoother:
             # Association gate: a filter whose state sits implausibly far from
             # this measurement belongs to a different object, so start a new
             # track instead of teleporting the existing box across the road.
-            if is_damage and not restart:
+            if not restart:
                 try:
                     st = self._filters[key].state()
                     if math.hypot(meas_cx - float(st[0]), meas_cy - float(st[1])) > max_jump:
-                        restart = True
                         self.rejected_associations += 1
+                        # Keep the identity and history, but let the render
+                        # gate below reject this one-frame innovation.
                 except Exception:
-                    restart = True
+                    pass
 
             if key not in self.label_side:
                 # Prefer a label above the box; fall back to below only when the
@@ -1087,20 +1094,36 @@ class DetectionSmoother:
             d.track_hits = self.hits[key]
 
             try:
-                st = self._filters[key].state()
-                w_px, h_px = meas_w, meas_h
-                # Reject a filtered box whose size has run away from the
-                # measurement rather than drawing an implausible rectangle.
-                if not (0.5 <= w_px / meas_w <= 2.0 and 0.5 <= h_px / meas_h <= 2.0):
-                    cx, cy, w_px, h_px = meas_cx, meas_cy, meas_w, meas_h
-                    d.tracking_source = "yolo"
-                # The filter remains responsible for association and internal
-                # continuity, but a fresh detection is the rendered geometry.
-                # Rendering the filtered state here makes moving objects visibly
-                # lag behind their current detector box.
-                self.box_state[key] = (meas_cx, meas_cy, meas_w, meas_h)
-                d.box = measured_box
-                d.tracking_source = "yolo"
+                previous = self.box_state.get(key)
+                predicted = self._filters[key].state()
+                prior_cx, prior_cy = float(predicted[0]), float(predicted[1])
+                innovation = math.hypot(meas_cx - prior_cx, meas_cy - prior_cy)
+                innovation_gate = max(0.12 * math.hypot(w, h), 2.0 * max(meas_w, meas_h))
+                if innovation > innovation_gate and previous is not None:
+                    # A single implausible measurement must not teleport the
+                    # rendered box. The current detection still exists in the
+                    # returned list, but its displayed geometry stays trusted.
+                    rendered = previous
+                    d.tracking_source = "kalman"
+                else:
+                    base = previous or (prior_cx, prior_cy, meas_w, meas_h)
+                    alpha = BOX_SMOOTH_ALPHA
+                    rendered = tuple(
+                        alpha * current + (1.0 - alpha) * old
+                        for current, old in zip((meas_cx, meas_cy, meas_w, meas_h), base)
+                    )
+                    d.tracking_source = "kalman"
+                rcx, rcy, rw, rh = rendered
+                render_box = (
+                    max(0, min(int(round(rcx - rw / 2)), w - 1)),
+                    max(0, min(int(round(rcy - rh / 2)), h - 1)),
+                    max(0, min(int(round(rcx + rw / 2)), w - 1)),
+                    max(0, min(int(round(rcy + rh / 2)), h - 1)),
+                )
+                if render_box[2] <= render_box[0] or render_box[3] <= render_box[1]:
+                    render_box = measured_box
+                self.box_state[key] = rendered
+                d.box = render_box
             except Exception:
                 d.box = measured_box
                 d.tracking_source = "yolo"
@@ -1276,8 +1299,8 @@ def deduplicate(items: list[Detection]) -> list[Detection]:
     return kept
 
 
-def visible_tracks(items: list[Detection], confirmed_only: bool = True) -> list[Detection]:
-    """Return one current, confirmed detection per track for all downstream use."""
+def visible_tracks(items: list[Detection], confirmed_only: bool = False) -> list[Detection]:
+    """Return one current detection per track, never prediction-only ghosts."""
     best: dict[str, Detection] = {}
     for d in items:
         if confirmed_only and d.track_hits < TRACK_MIN_HITS:
@@ -1292,27 +1315,31 @@ def is_ego_vehicle(d: Detection, frame_h: int, frame_w: int) -> bool:
     """Return True if *d* is almost certainly the camera car's own hood/bumper.
 
     The ego vehicle appears as a large vehicle box anchored at the
-    bottom-centre of the frame.  We use three normalised criteria:
+    bottom-centre of the frame. All criteria are required:
 
     1. Box width ≥ ``EGO_MIN_BOX_WIDTH_RATIO`` of the frame width.
     2. Box top edge below ``EGO_TOP_MIN_RATIO`` of the frame height.
-    3. ≥ ``EGO_OVERLAP_MIN_RATIO`` of the box area overlaps a narrow
+    3. Box bottom is anchored within ``EGO_MIN_BOTTOM_RATIO`` of frame height.
+    4. ≥ ``EGO_OVERLAP_MIN_RATIO`` of the box area overlaps a narrow
        centred strip in the bottom 30 % of the frame (the ego ROI).
 
-    No single criterion is sufficient; together they leave real nearby
-    vehicles (offset horizontally or not anchored to the bottom) alone.
+    A non-vehicle or a real nearby vehicle that merely enters the bottom-centre
+    region therefore remains a valid detection.
     """
+    if d.name.lower() not in VEHICLE_CLASSES or frame_h <= 0 or frame_w <= 0:
+        return False
     x1, y1, x2, y2 = d.box
     bw = x2 - x1
     bh = y2 - y1
+    if bw / frame_w < EGO_MIN_WIDTH_RATIO or y1 / frame_h < EGO_MIN_TOP_RATIO:
+        return False
+    if y2 / frame_h < EGO_MIN_BOTTOM_RATIO:
+        return False
     roi_x1 = int(EGO_ROI_X1 * frame_w)
     roi_x2 = int(EGO_ROI_X2 * frame_w)
     roi_y1 = int(EGO_ROI_Y1 * frame_h)
     roi_y2 = frame_h
     centre_x = (x1 + x2) / 2.0
-    centre_y = (y1 + y2) / 2.0
-    if roi_x1 <= centre_x <= roi_x2 and roi_y1 <= centre_y <= roi_y2:
-        return True
     ox1 = max(x1, roi_x1)
     oy1 = max(y1, roi_y1)
     ox2 = min(x2, roi_x2)
@@ -1341,8 +1368,9 @@ def select_device(requested: str | None = None) -> str:
         pass
     try:
         if torch.backends.mps.is_available():
-            # confirm the backend actually works on this machine
-            torch.zeros(1, device="mps") + 1
+            # Confirm a real tensor operation and model forward pass work.
+            probe = torch.nn.Conv2d(3, 4, kernel_size=3).to("mps")
+            probe(torch.zeros((1, 3, 16, 16), device="mps"))
             return "mps"
     except Exception as exc:
         print(f"MPS unavailable ({exc!r}); using CPU")
@@ -1390,14 +1418,16 @@ def extract(model: YOLO, frame: np.ndarray, source: str, polygon: np.ndarray, st
     infer_kwargs: dict[str, Any] = dict(conf=conf, iou=IOU, imgsz=imgsz, verbose=False)
     if INFERENCE_DEVICE:
         infer_kwargs["device"] = INFERENCE_DEVICE
-    # Raw post-NMS predictions are required here: the ego ROI must be applied
-    # before any tracker can assign an ID or retain state for the hood.
-    results: Any = model.predict(frame, **infer_kwargs) if hasattr(model, "predict") else model.track(
+    # Track-capable YOLO models must use ByteTrack. This preserves IDs and lets
+    # the smoother associate detections across frames; predict() is only a
+    # compatibility fallback for detector stubs without track().
+    results: Any = model.track(
         frame, persist=True, tracker=TRACKER, **infer_kwargs
-    )
+    ) if hasattr(model, "track") else model.predict(frame, **infer_kwargs)
     output: list[Detection] = []
     # common model class whitelist
     COMMON_FILTER = {"person","bicycle","car","motorcycle","bus","truck","traffic light","stop sign","dog","cat","horse","cow","sheep"}
+    fallback_index = 0
     for result in results:
         boxes = getattr(result, "boxes", None)
         if boxes is None:
@@ -1438,7 +1468,10 @@ def extract(model: YOLO, frame: np.ndarray, source: str, polygon: np.ndarray, st
             if tid >= 0:
                 key = f"{stream_id}:{source}:{name}:{tid}"
             else:
-                key = f"{stream_id}:{source}:{name}:g{x1 // 40}:{y1 // 40}"
+                # A grid is useful as an association hint, but cannot be an
+                # identity: two same-class detections may share one cell.
+                key = f"{stream_id}:{source}:{name}:tmp{fallback_index}"
+                fallback_index += 1
             # compute distance using calibrator if available
             if calibrator is not None:
                 try:
@@ -1692,6 +1725,15 @@ def save_incident(frame: np.ndarray, video_name: str, frame_no: int, d: Detectio
     return path
 
 
+def incident_reference(path: Path) -> str:
+    """Return a portable public reference, never the local filesystem path."""
+    try:
+        relative = path.relative_to(INCIDENT_FOLDER)
+    except ValueError:
+        relative = Path(path.name)
+    return str(Path("output/incidents") / relative).replace("\\", "/")
+
+
 def print_performance_report(video_name: str, stats: RunStats, pipeline_stats: dict,
                              elapsed: float, source_fps: float) -> None:
     """Per-stage timing breakdown, printed when --debug-performance is set."""
@@ -1882,6 +1924,14 @@ def process_video(path: Path, common: YOLO, custom: YOLO, expert: PrologRiskEngi
         frame: np.ndarray
         capture_timestamp: float = 0.0
 
+        @property
+        def frame_id(self) -> int:
+            return self.frame_no
+
+        @property
+        def source_timestamp(self) -> float:
+            return self.video_time
+
     @dataclass
     class ProcessedItem:
         frame_no: int
@@ -1899,6 +1949,15 @@ def process_video(path: Path, common: YOLO, custom: YOLO, expert: PrologRiskEngi
         # detection that belongs to an older frame.
         detection_frame_no: int = 0
         capture_timestamp: float = 0.0
+        detection_timestamp: float = 0.0
+
+        @property
+        def frame_id(self) -> int:
+            return self.frame_no
+
+        @property
+        def source_timestamp(self) -> float:
+            return self.video_time
 
     # Initialize resources and shared state
     voice = VoiceAlert(voice_enabled)
@@ -2197,6 +2256,7 @@ def process_video(path: Path, common: YOLO, custom: YOLO, expert: PrologRiskEngi
                     panel_explanation=panel_expl,
                     detection_frame_no=frame_no,
                     capture_timestamp=getattr(item, "capture_timestamp", 0.0),
+                    detection_timestamp=time.perf_counter(),
                 )
 
                 # put processed result (may block for backpressure)
@@ -2235,7 +2295,7 @@ def process_video(path: Path, common: YOLO, custom: YOLO, expert: PrologRiskEngi
         with csv_out.open("w", newline="", encoding="utf-8") as f:
             csv_writer = csv.writer(f)
             csv_writer.writerow([
-                "frame", "video_time_s", "object", "source", "confidence",
+                "frame", "frame_id", "video_time_s", "source_timestamp", "detection_timestamp", "object", "source", "confidence",
                 "distance_m", "distance_method", "closing_speed_mps", "ttc_s", "lane_overlap",
                 "x1", "y1", "x2", "y2",
                 "in_lane", "risk", "action", "decision_source", "rule_id", "rule_priority",
@@ -2305,10 +2365,13 @@ def process_video(path: Path, common: YOLO, custom: YOLO, expert: PrologRiskEngi
                                     incident = save_incident(draw_frame, path.name, p.frame_no, d, last_incident, video_time)
                                     if incident:
                                         stats.incidents += 1
-                                        incident_paths[d.track_key] = str(incident)
+                                        incident_paths[d.track_key] = incident_reference(incident)
                                 csv_writer.writerow([
-                                    p.frame_no,
-                                    round(video_time, 3),
+                                     p.frame_no,
+                                     p.frame_id,
+                                     round(video_time, 3),
+                                     round(p.source_timestamp, 3),
+                                     round(p.detection_timestamp, 6),
                                     d.name,
                                     d.source,
                                     round(d.confidence, 4),
@@ -2404,11 +2467,14 @@ def process_video(path: Path, common: YOLO, custom: YOLO, expert: PrologRiskEngi
                                 incident = save_incident(draw_frame, path.name, p.frame_no, d, last_incident, video_time)
                                 if incident:
                                     stats.incidents += 1
-                                    incident_paths[d.track_key] = str(incident)
+                                    incident_paths[d.track_key] = incident_reference(incident)
 
                             csv_writer.writerow([
-                                p.frame_no,
-                                round(video_time, 3),
+                                 p.frame_no,
+                                 p.frame_id,
+                                 round(video_time, 3),
+                                 round(p.source_timestamp, 3),
+                                 round(p.detection_timestamp, 6),
                                 d.name,
                                 d.source,
                                 round(d.confidence, 4),

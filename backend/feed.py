@@ -10,7 +10,6 @@ from __future__ import annotations
 
 import asyncio
 import json
-import random
 import threading
 import time
 from collections import defaultdict
@@ -18,7 +17,7 @@ from typing import Any
 
 from .data import DataStore, LEVEL_PRIORITY
 
-TICK_S = 0.21  # ~4.8 fps, matching the real pipeline's ~4.5 fps
+TICK_S = 0.21  # recorded replay cadence, separate from source and processing FPS
 
 
 class Broadcaster:
@@ -61,6 +60,7 @@ class LiveFeed:
         self.snapshot: dict = self._blank_snapshot()
         self._stop = threading.Event()
         self._thread: threading.Thread | None = None
+        self._playing = True
         self._alert_ring: dict[str, float] = {}
         self._ring: dict[str, list[int]] = defaultdict(list)
 
@@ -73,7 +73,9 @@ class LiveFeed:
             "video_time": 0.0,
             "duration": 0.0,
             "fps": 0.0,
+            "replay_speed_fps": 0.0,
             "latency_ms": 0.0,
+            "feed_mode": "Recorded detection replay",
             "state": {"level": "SAFE", "action": "INITIALISING"},
             "counts": {"potholes": 0, "vehicles": 0, "persons": 0, "total": 0},
             "detections": [],
@@ -93,6 +95,10 @@ class LiveFeed:
             self._alert_ring.clear()
             return True
 
+    def set_playing(self, playing: bool) -> None:
+        with self.lock:
+            self._playing = bool(playing)
+
     def start(self) -> None:
         if self._thread is not None:
             return
@@ -102,6 +108,11 @@ class LiveFeed:
 
     def stop(self) -> None:
         self._stop.set()
+
+    def join(self, timeout: float = 5.0) -> None:
+        if self._thread is not None:
+            self._thread.join(timeout=timeout)
+            self._thread = None
 
     def get_snapshot(self) -> dict:
         with self.lock:
@@ -130,6 +141,10 @@ class LiveFeed:
         while not self._stop.is_set():
             with self.lock:
                 video_id = self.video_id
+                playing = self._playing
+            if not playing:
+                time.sleep(TICK_S)
+                continue
             if video_id is None:
                 time.sleep(TICK_S)
                 continue
@@ -140,6 +155,9 @@ class LiveFeed:
             frames = self._frames_of(video_id)
             i = 0
             while not self._stop.is_set() and i < len(frames):
+                with self.lock:
+                    if self.video_id != video_id or not self._playing:
+                        break
                 frame_no, rows = frames[i]
                 msg = self._build(video, frame_no, rows)
                 self.broadcaster.publish(msg)
@@ -151,8 +169,7 @@ class LiveFeed:
         with self.lock:
             base = dict(self.snapshot)
             base.pop("type", None)
-        fps = round(random.uniform(4.2, 5.3), 2)
-        latency = round(1000.0 / fps + random.uniform(2, 14), 1)
+        replay_fps = round(1.0 / TICK_S, 2)
         source_fps = float(video.get("source_fps") or 30.0)
 
         detections = []
@@ -222,8 +239,10 @@ class LiveFeed:
             snap["video_time"] = frame_no / source_fps
             snap["duration"] = video["frames"] / source_fps
             snap["source_fps"] = source_fps
-            snap["fps"] = fps
-            snap["latency_ms"] = latency
+            snap["fps"] = replay_fps
+            snap["replay_speed_fps"] = replay_fps
+            snap["latency_ms"] = None
+            snap["feed_mode"] = "Recorded detection replay"
             snap["state"] = state
             snap["counts"] = counts
             snap["detections"] = detections

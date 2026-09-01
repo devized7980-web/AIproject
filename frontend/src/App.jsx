@@ -94,7 +94,7 @@ export default function App() {
   const go = (p) => {
     setPage(p);
     setMenu(false);
-    if (p !== "videos") window.history.pushState({}, "", `/${p}`);
+    window.history.pushState({}, "", p === "videos" ? "/videos" : `/${p}`);
     window.scrollTo(0, 0);
   };
 

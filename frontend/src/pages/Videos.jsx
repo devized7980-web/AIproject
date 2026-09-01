@@ -7,7 +7,7 @@ export default function Videos({ videos }) {
   return (
     <>
       <h1 className="sw-h1">Videos</h1>
-      <p className="sw-sub">The shared eight-clip library used by Live Detection and Incident Replay.</p>
+      <p className="sw-sub">The shared video library used by Live Detection and Incident Replay.</p>
       <div className="sw-grid">
         {all.map((video) => <VideoPanel key={video.id} video={video} />)}
       </div>

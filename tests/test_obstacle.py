@@ -70,14 +70,14 @@ class ObstacleRuleTests(unittest.TestCase):
         d = make_detection("tree", distance=2.0, ttc=1.0, box_ratio=0.3)
         risk, action, rule_id, explanation, source = main.fallback_decision(d)
         self.assertEqual(risk, "CRITICAL")
-        self.assertEqual(rule_id, "brake_and_avoid_obstacle_py")
+        self.assertEqual(rule_id, "brake_and_avoid_obstacle")
         self.assertEqual(source, "python_fallback")
 
     def test_fallback_obstacle_warning_matches_prolog(self):
         d = make_detection("cone", distance=5.0, ttc=2.5, box_ratio=0.2)
         risk, action, rule_id, explanation, source = main.fallback_decision(d)
         self.assertEqual(risk, "WARNING")
-        self.assertEqual(rule_id, "obstacle_warning_py")
+        self.assertEqual(rule_id, "obstacle_warning")
         self.assertEqual(source, "python_fallback")
 
     def test_obstacle_classes_membership(self):

@@ -9,6 +9,7 @@ traffic_control(parking_meter).
 person(person).
 vehicle(car). vehicle(truck). vehicle(bus). vehicle(motorcycle). vehicle(bicycle).
 road_damage(pothole). road_damage(road_crack). road_damage(crack).
+road_damage(longitudinal). road_damage(transverse). road_damage(alligator).
 animal(dog). animal(cat). animal(cow). animal(horse). animal(sheep). animal(bird).
 obstacle(tree). obstacle(fallen_tree). obstacle(obstacle).
 obstacle(cone). obstacle(barrier). obstacle(debris). obstacle(log). obstacle(branch).

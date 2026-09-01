@@ -32,7 +32,7 @@ pip install ultralytics opencv-python numpy pyswip pyttsx3
 # 1. Make sure the detection models exist (downloads yolo11n.pt if missing)
 python download_yolo.py
 
-# 2. Put dashcam clips (.mp4/.avi/.mov/.mkv/.m4v/.wmv) in the repo root
+# 2. Put dashcam clips (.mp4/.avi/.mov/.mkv/.m4v/.wmv) in `videos/`
 
 # 3. Run the detector on one video at a time
 python main.py                 # interactive video picker
@@ -45,12 +45,12 @@ Results are written to `output/` and incident snapshots to `output/incidents/`.
 
 ### Frontend (Safeway AI dashboard) — live demo
 
-A React/Vite app (`frontend/`) presents the processed clips as a **live command center** with 8 pages: Live Command Center, Incident Replay, Safety Analytics, AI Explainer, What-If Simulator, Alert Center, Model Performance Lab and System Settings.
+A React/Vite app (`frontend/`) presents the clips across 8 pages: Home, Live Detection, Incident Replay, Videos, Analytics, What-If Simulator, Alert Center and System Health.
 
-A FastAPI backend (`backend/`) replays the recorded pipeline output as a live camera feed over WebSockets and serves the REST endpoints (state, alerts, analytics, Prolog traces, simulation, live YOLO benchmark). The frontend falls back to a local mirror of the static data when the backend is offline.
+A FastAPI backend (`backend/`) replays recorded pipeline detections over WebSockets; it is not live camera inference. It serves state, alerts, analytics, Prolog traces, simulation and model benchmark endpoints. The frontend falls back to a local mirror when the backend is offline.
 
 ```bash
-# 1. Start the backend (repo root) — replays output/ at ~5 fps over WebSocket
+# 1. Start the backend (repo root) — replays recorded output/ at ~5 fps over WebSocket
 pip install fastapi uvicorn websockets pyswip
 python -m uvicorn backend.server:app --port 8000
 
@@ -76,6 +76,13 @@ After running `main.py`, rebuild the frontend dataset from the `output/` folder.
 python generate_frontend_data.py
 ```
 
+### Reproducible model benchmark
+
+Run `python -m backend` from the repository root to measure model-only throughput
+on the bundled sample frames. The command reports the new measured FPS beside
+the previous known MPS result of approximately 26.47 FPS; it does not claim that
+the comparison value is a current measurement.
+
 ## Project layout
 
 ```
@@ -83,13 +90,13 @@ main.py                     detection pipeline + CLI
 expert_system.pl            Prolog risk rules
 download_yolo.py            downloads the common YOLO11 model
 generate_frontend_data.py   rebuilds frontend data from output/ (static fallback)
-yolo11n.pt                  common COCO model
-best.pt                     custom road-damage model
+models/yolo11n.pt           common COCO model
+models/best.pt              custom road-damage model
 backend/                    FastAPI live backend (server, data, Prolog engine, feed, benchmark)
-frontend/                   React/Vite dashboard (Safeway AI, 9 pages)
+frontend/                   React/Vite dashboard (Safeway AI, 8 pages)
   src/data.js               editable constants (emergency numbers, levels)
   src/videos.generated.js   auto-generated static fallback data (do not edit)
-  src/pages/                the 9 dashboard pages
+  src/pages/                the 8 dashboard pages
   public/videos/            processed clips + thumbnails
 output/                     annotated videos, CSV, JSON, HTML, incidents
 ```

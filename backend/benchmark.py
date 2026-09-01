@@ -42,13 +42,22 @@ class Benchmark:
         self.running = False
         self.error: str | None = None
         self._thread: threading.Thread | None = None
+        self._stop = threading.Event()
 
     def start(self) -> None:
         if self._thread is not None:
             return
         self.running = True
+        self._stop.clear()
         self._thread = threading.Thread(target=self._run, daemon=True)
         self._thread.start()
+
+    def stop(self, timeout: float = 5.0) -> None:
+        self._stop.set()
+        if self._thread is not None:
+            self._thread.join(timeout=timeout)
+            self._thread = None
+        self.running = False
 
     def _sample_frames(self, n: int = 6) -> list:
         frames = []
@@ -86,6 +95,8 @@ class Benchmark:
 
         out: dict[str, dict] = {}
         for m in MODELS:
+            if self._stop.is_set():
+                break
             if not m["path"].exists():
                 out[m["key"]] = {"loaded": False, "error": "weights missing"}
                 continue
@@ -95,6 +106,8 @@ class Benchmark:
                 model.predict(frames[0], imgsz=320, verbose=False)
                 times = []
                 for f in frames:
+                    if self._stop.is_set():
+                        break
                     t0 = time.perf_counter()
                     r = model.predict(f, imgsz=320, verbose=False)
                     times.append((time.perf_counter() - t0) * 1000.0)

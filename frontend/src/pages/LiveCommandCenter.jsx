@@ -110,7 +110,8 @@ export default function LiveCommandCenter({ videos }) {
   const all = Array.isArray(videos) && videos.length ? videos : VIDEOS;
   const [videoId, setVideoId] = useState(all[0]?.id);
   const video = all.find((v) => v.id === videoId) || all[0];
-  const { feed, mode } = useLiveFeed({ videoId: video?.id, video, enabled: !!video });
+  const analysed = video?.analysis_available !== false;
+  const { feed, mode, setPlaying: setFeedPlaying } = useLiveFeed({ videoId: video?.id, video, enabled: !!video });
   const [showOverlay, setShowOverlay] = useState(true);
   const [settings] = useSettingsCtx();
   const lastAlert = useRef(null);
@@ -120,7 +121,10 @@ export default function LiveCommandCenter({ videos }) {
   const [stageRatio, setStageRatio] = useState(null);
   const [videoReady, setVideoReady] = useState(false);
   const [videoError, setVideoError] = useState(false);
-  const [usingProcessed, setUsingProcessed] = useState(false);
+  const [usingProcessed, setUsingProcessed] = useState(Boolean(video?.processed_available));
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [autoplayBlocked, setAutoplayBlocked] = useState(false);
+  const stageRef = useRef(null);
   const sourceFps = Number(video?.source_fps) > 0 ? Number(video.source_fps) : 30;
 
   useEffect(() => {
@@ -133,21 +137,23 @@ export default function LiveCommandCenter({ videos }) {
     setCurTime(0);
     setVideoReady(false);
     setVideoError(false);
-    setUsingProcessed(false);
+    setUsingProcessed(Boolean(video?.processed_available));
+    setIsPlaying(false);
+    setAutoplayBlocked(false);
     if (!video?.id) return () => { on = false; };
     getVideoFrames(video.id).then((d) => {
-      const list = (d && Array.isArray(d.frames) ? d.frames : [])
+      const list = (d && analysed && Array.isArray(d.frames) ? d.frames : [])
         .filter((f) => Number.isFinite(f.t) && Number.isFinite(f.x));
       if (on) setFrames(list);
     });
     return () => { on = false; };
-  }, [video?.id]);
+  }, [video?.id, analysed]);
 
   // onTimeUpdate is intentionally too sparse for a moving box. Sample the
   // presented video clock every animation frame instead of using processing FPS.
   useEffect(() => {
     const element = videoRef.current;
-    if (!element) return undefined;
+    if (!element || !isPlaying) return undefined;
     let raf = 0;
     const sample = () => {
       setCurTime(element.currentTime || 0);
@@ -155,7 +161,26 @@ export default function LiveCommandCenter({ videos }) {
     };
     raf = requestAnimationFrame(sample);
     return () => cancelAnimationFrame(raf);
-  }, [video?.id]);
+  }, [video?.id, isPlaying]);
+
+  const overlayBox = (d) => {
+    const sourceW = Number(video?.width) || 16;
+    const sourceH = Number(video?.height) || 9;
+    const stage = stageRef.current;
+    const stageW = stage?.clientWidth || sourceW;
+    const stageH = stage?.clientHeight || sourceH;
+    const scale = Math.min(stageW / sourceW, stageH / sourceH);
+    const renderedW = sourceW * scale;
+    const renderedH = sourceH * scale;
+    const offsetX = (stageW - renderedW) / 2;
+    const offsetY = (stageH - renderedH) / 2;
+    return {
+      left: `${((offsetX + (d.x / 100) * renderedW) / stageW) * 100}%`,
+      top: `${((offsetY + (d.y / 100) * renderedH) / stageH) * 100}%`,
+      width: `${(d.w / 100) * renderedW / stageW * 100}%`,
+      height: `${(d.h / 100) * renderedH / stageH * 100}%`,
+    };
+  };
 
   const synced = useMemo(() => {
     const empty = {
@@ -250,7 +275,7 @@ export default function LiveCommandCenter({ videos }) {
         </div>
         <div className="sw-cc-actions">
           <span className="sw-livebadge" data-mode={mode}>
-            <RadioTower size={12} /> {mode === "live" ? "LIVE FEED" : mode === "sim" ? "LOCAL MIRROR" : "CONNECTING"}
+             <RadioTower size={12} /> {mode === "live" ? "RECORDED REPLAY" : mode === "sim" ? "LOCAL MIRROR" : "CONNECTING"}
           </span>
           <label className="sw-select">
             <span>Source</span>
@@ -272,41 +297,49 @@ export default function LiveCommandCenter({ videos }) {
               </button>
             }
           >
-            <div className="sw-stage" style={stageRatio ? { aspectRatio: String(stageRatio) } : undefined}>
+             <div ref={stageRef} className="sw-stage" style={stageRatio ? { aspectRatio: String(stageRatio) } : undefined}>
               <video
                 ref={videoRef}
                 key={`${video?.id}-${usingProcessed}`}
-                src={
-                  usingProcessed
-                    ? `/videos/${video?.file}`
-                    : (video?.raw || RAW[video?.id]) ? `/raw/${video.raw || RAW[video.id]}` : ""
-                }
+                 src={usingProcessed && video?.file ? `/videos/${video.file}` : (video?.raw || RAW[video?.id]) ? `/raw/${video.raw || RAW[video.id]}` : ""}
                 muted playsInline loop autoPlay
                 onLoadedMetadata={(e) => {
                   const v = e.currentTarget;
-                  setVideoReady(true);
-                  if (v.videoWidth && v.videoHeight) setStageRatio(v.videoWidth / v.videoHeight);
-                }}
-                onError={() => {
-                  if (!usingProcessed && (video?.raw || RAW[video?.id]) && video?.file) {
-                    setUsingProcessed(true);
+                   setVideoReady(true);
+                   if (v.videoWidth && v.videoHeight) setStageRatio(v.videoWidth / v.videoHeight);
+                   if (import.meta.env.DEV) console.debug("Recorded replay video", { paused: v.paused, currentTime: v.currentTime, duration: v.duration, readyState: v.readyState, videoWidth: v.videoWidth, videoHeight: v.videoHeight, muted: v.muted, mediaError: v.error?.code || null });
+                   v.play().then(() => {
+                     if (import.meta.env.DEV) console.debug("Recorded replay autoplay", { result: "resolved" });
+                     setIsPlaying(true);
+                   }).catch((error) => {
+                     if (import.meta.env.DEV) console.debug("Recorded replay autoplay", { result: "rejected", error: error?.name || "NotAllowedError" });
+                     setAutoplayBlocked(true);
+                   });
+                 }}
+                 onPlay={() => { setIsPlaying(true); setAutoplayBlocked(false); setFeedPlaying(true); }}
+                 onPause={() => { setIsPlaying(false); setFeedPlaying(false); }}
+                   onError={(event) => {
+                     if (import.meta.env.DEV) console.debug("Recorded replay media error", { code: event.currentTarget.error?.code || null });
+                   if (usingProcessed && (video?.raw || RAW[video?.id])) {
+                     setUsingProcessed(false);
                     setVideoError(false);
                   } else {
                     setVideoReady(false);
                     setVideoError(true);
                   }
                 }}
-              />
+               />
+               {videoReady && !isPlaying && <div className="sw-empty"><button className="sw-reportbtn" onClick={() => videoRef.current?.play().catch(() => setAutoplayBlocked(true))}>{autoplayBlocked ? "Start Replay" : "Start Replay"}</button><small>{autoplayBlocked ? "Safari blocked autoplay. Press Start Replay to begin synchronized detections." : "Replay paused at the current timestamp."}</small></div>}
               {videoError && <div className="sw-empty"><div>Video unavailable</div><small>Both raw and processed clips could not be loaded. The backend may be offline.</small></div>}
               {!videoError && !usingProcessed && !(video?.raw || RAW[video?.id]) && <div className="sw-empty"><div>Raw video unavailable</div><small>Backend offline or the original clip could not be decoded.</small></div>}
-              {videoReady && showOverlay && (usingProcessed || video?.raw || RAW[video?.id]) && overlayRows.map((d, i) => (
+               {videoReady && analysed && showOverlay && overlayRows.map((d, i) => (
                 <span
                   key={`${d.track_id || d.name}-${d.frame || i}`}
                   className="sw-dbox"
                   data-soft={d.in_lane ? "0" : "1"}
                   data-risk={d.risk}
-                  style={{
-                    left: `${d.x}%`, top: `${d.y}%`, width: `${d.w}%`, height: `${d.h}%`,
+                     style={{
+                     ...overlayBox(d),
                     "--bc": levelColor(d.risk),
                   }}
                 >
@@ -315,7 +348,7 @@ export default function LiveCommandCenter({ videos }) {
                   </em>
                 </span>
               ))}
-              {videoReady && showOverlay && <div className="sw-hud">
+               {videoReady && <div className="sw-hud">
                 <div className="who" style={{ color: levelColor(synced.state.level) }}>
                   {synced.state.level} — {synced.state.action}
                 </div>
@@ -334,8 +367,8 @@ export default function LiveCommandCenter({ videos }) {
           </div>
 
           <div className="sw-2col" style={{ gridTemplateColumns: "minmax(0,1fr) 320px" }}>
-            <Panel title="Detection stream" right={<span className="sw-eyebrow">{dets.length} live objects</span>}>
-              {dets.length === 0 && <div className="sw-eyebrow" style={{ padding: "6px 0" }}>No objects this frame — road clear.</div>}
+             <Panel title="Detection stream" right={<span className="sw-eyebrow">{analysed ? `${dets.length} recorded objects` : "Not analysed yet"}</span>}>
+               {dets.length === 0 && <div className="sw-eyebrow" style={{ padding: "6px 0" }}>{analysed ? "No objects this frame — road clear." : "Not analysed yet — no detection boxes or incidents are available."}</div>}
               <div className="sw-detfeed">
                 {dets.map((d, i) => (
                   <div className="row" key={i}>
@@ -385,7 +418,8 @@ export default function LiveCommandCenter({ videos }) {
           <Panel title="Live feed engine" right={<span className="sw-eyebrow">v2.0</span>}>
             <div className="sw-engine">
               <div className="row"><span>Detector</span><b>YOLO11n + custom best.pt</b></div>
-              <div className="row"><span>Reasoning</span><b>{feed ? (mode === "live" ? "SWI-Prolog live" : "Rule mirror") : "—"}</b></div>
+               <div className="row"><span>Feed</span><b>{feed?.feed_mode || "Recorded detection replay"}</b></div>
+               <div className="row"><span>Reasoning</span><b>{feed ? "Recorded pipeline decision" : "—"}</b></div>
               <div className="row"><span>Source clip</span><b>{String(video?.title || video?.id || "—").split("—")[0]}</b></div>
               <div className="row"><span>Weather</span><b>{video?.weather}</b></div>
               <div className="row"><span>Lane watch</span><b style={{ color: laneDep ? "var(--warning)" : "var(--safe)" }}>{laneDep ? "Departure" : "In lane"}</b></div>

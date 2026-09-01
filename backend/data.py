@@ -12,6 +12,7 @@ from typing import SupportsFloat
 
 ROOT = Path(__file__).resolve().parent.parent
 OUTPUT = ROOT / "output"
+PUBLIC_VIDEOS = ROOT / "frontend" / "public" / "videos"
 
 LEVELS = ["SAFE", "CAUTION", "WARNING", "CRITICAL"]
 LEVEL_PRIORITY = {"SAFE": 0, "CAUTION": 1, "WARNING": 2, "CRITICAL": 3}
@@ -55,7 +56,7 @@ META = {
     },
 }
 
-RAW_EXTENSIONS = (".mp4", ".mov", ".avi", ".mkv", ".MP4", ".MOV")
+RAW_EXTENSIONS = {".mp4", ".mov", ".avi", ".mkv", ".m4v", ".wmv"}
 
 
 def resolve_raw_file(stem: str) -> str:
@@ -68,7 +69,7 @@ def resolve_raw_file(stem: str) -> str:
                    if p.suffix in RAW_EXTENSIONS and p.name.startswith(stem)]
     except OSError:
         return stem
-    return sorted(entries)[0] if entries else stem
+    return sorted(entries, key=str.casefold)[0] if entries else stem
 
 
 def mmss(seconds: float) -> str:
@@ -135,6 +136,10 @@ def make_event(row: dict, t: float, duration: float, w: int, h: int) -> dict:
         "object": obj,
         "label": action,
         "action": action.upper(),
+        "decision_source": row.get("decision_source", "unknown"),
+        "rule_id": row.get("rule_id", ""),
+        "explanation": row.get("explanation", ""),
+        "decision_trace": row.get("decision_trace", ""),
         "distance_m": distance,
         "ttc_s": None if ttc is None else round(ttc, 2),
         "confidence": round(conf, 2),
@@ -148,6 +153,7 @@ def make_event(row: dict, t: float, duration: float, w: int, h: int) -> dict:
             }
         ],
         "track_id": _track_id(row.get("track_key")),
+        "incident_image": _incident_reference(row.get("incident_image")),
     }
 
 
@@ -188,6 +194,13 @@ def _track_id(value: object) -> str | None:
     return str(value).rsplit(":", 1)[-1] or None
 
 
+def _incident_reference(value: object) -> str | None:
+    if not value:
+        return None
+    name = Path(str(value).replace("\\", "/")).name
+    return f"output/incidents/{name}" if name else None
+
+
 class DataStore:
     """Loads output/ once and exposes structured views for the API."""
 
@@ -199,88 +212,112 @@ class DataStore:
         self.load()
 
     def load(self) -> None:
-        for summary_path in sorted(self.output.glob("*_summary.json")):
+        raw_dir = ROOT / "videos"
+        try:
+            raw_files = sorted(
+                (p for p in raw_dir.iterdir() if p.is_file() and p.suffix.lower() in RAW_EXTENSIONS),
+                key=lambda p: p.name.casefold(),
+            )
+        except OSError:
+            raw_files = []
+
+        summaries: dict[str, tuple[str, dict]] = {}
+        for summary_path in sorted(self.output.glob("*_summary.json"), key=lambda p: p.name.casefold()):
             try:
+                stem = summary_path.name.removesuffix("_summary.json")
                 summary = json.loads(summary_path.read_text(encoding="utf-8"))
+                raw_name = resolve_raw_file(stem)
+                if raw_name in {p.name for p in raw_files}:
+                    summaries[raw_name] = (stem, summary)
             except (json.JSONDecodeError, OSError):
                 continue
-            try:
-                stem = summary_path.name.replace("_summary.json", "")
-                raw_name = resolve_raw_file(stem)
-                if not raw_name or str(raw_name).lower() == "null" or stem in {"batch", "null"}:
-                    continue
-                meta = META.get(raw_name, {})
-                csv_path = self.output / f"{stem}_detections.csv"
-                processed_path = self.output / f"{stem}_advanced.mp4"
-                if not csv_path.exists() or not processed_path.exists():
-                    continue
 
-                with csv_path.open(newline="", encoding="utf-8") as f:
-                    rows = list(csv.DictReader(f))
+        for raw_path in raw_files:
+            raw_name = raw_path.name
+            meta = META.get(raw_name, {})
+            stem, summary = summaries.get(raw_name, ("", {}))
+            csv_path = self.output / f"{stem}_detections.csv" if stem else None
+            processed_path = self.output / f"{stem}_advanced.mp4" if stem else None
+            csv_available = bool(csv_path and csv_path.is_file())
+            # The frontend serves processed clips from the public mount. An
+            # output file alone is not enough to advertise a playable URL.
+            served_processed = (
+                PUBLIC_VIDEOS / f"{stem}_processed.mp4" if processed_path else None
+            )
+            processed_available = bool(processed_path and processed_path.is_file()
+                                       and served_processed and served_processed.is_file())
+            analysis_available = bool(stem and summary and csv_available)
+            clean: list[dict] = []
+            if csv_available and csv_path is not None:
+                try:
+                    with csv_path.open(newline="", encoding="utf-8") as f:
+                        for row in csv.DictReader(f):
+                            obj = row.get("object", "")
+                            if obj in RELEVANT_CLASSES or DISPLAY_NAMES.get(obj):
+                                row["object"] = DISPLAY_NAMES.get(obj, obj)
+                                clean.append(row)
+                except (OSError, csv.Error):
+                    clean = []
+                    analysis_available = False
 
-                clean = []
-                for r in rows:
-                    obj = r.get("object", "")
-                    if obj in RELEVANT_CLASSES or DISPLAY_NAMES.get(obj):
-                        r["object"] = DISPLAY_NAMES.get(obj, obj)
-                        clean.append(r)
-
-                # Video resolution (used to normalise box coordinates).
-                w, h = self._video_size(stem, int(_f(summary.get("width"), 1280)), 720)
-                source_fps = self._video_fps(raw_name, 30.0)
+            w, h = self._video_size(
+                stem if processed_available else "",
+                int(_f(summary.get("width"), 1280)),
+                int(_f(summary.get("height"), 720)),
+            )
+            source_fps = self._video_fps(raw_name, 30.0)
+            if analysis_available:
                 clean = [r for r in clean if not _is_ego_row(r, w, h)]
-                duration = max((_f(r.get("video_time_s")) for r in clean), default=0.0)
-
-                object_counts: dict[str, int] = {}
-                risk_counts: dict[str, int] = {}
-                for r in clean:
-                    object_counts[r["object"]] = object_counts.get(r["object"], 0) + 1
-                    rc = r.get("risk", "SAFE")
-                    risk_counts[rc] = risk_counts.get(rc, 0) + 1
-
-                # Full counts from the summary include non-relevant ("noise")
-                # classes — used as a real false-positive proxy.
-                raw_counts = summary.get("object_counts", {})
-                noise_counts = {k: v for k, v in raw_counts.items()
-                                if k not in RELEVANT_CLASSES
-                                and DISPLAY_NAMES.get(k, k) not in object_counts}
-
-                events = build_events(clean, duration, w, h)
-                clean_ttc = [_f(r.get("ttc_s"), math.inf) for r in clean]
-                minimum_ttc = min((v for v in clean_ttc if math.isfinite(v)), default=None)
-                has_alerting_row = any(LEVEL_PRIORITY.get(r.get("risk", "SAFE"), 0) >= 2 for r in clean)
-                vid = f"video_{len(self.videos) + 1}"
-                video = {
-                    "id": vid,
-                    "title": meta.get("title", stem.replace("_", " ").title()),
-                    "file": f"{stem}_processed.mp4",
-                    # Live overlays must use the original camera clip, never the
-                    # annotated advanced output used by replay/gallery views.
-                    "raw": meta.get("raw", raw_name),
-                    "thumb": f"{stem}_thumb.jpg",
-                    "location": meta.get("location", "Untagged route"),
-                    "weather": meta.get("weather", "Unknown"),
-                    "duration": mmss(duration),
-                    "frames": int(_f(summary.get("frames"))),
-                    "source_fps": source_fps,
-                    "total_detections": sum(object_counts.values()),
-                    "incidents": int(_f(summary.get("incidents"))) if has_alerting_row else 0,
-                    "minimum_ttc_s": None if minimum_ttc is None else round(minimum_ttc, 3),
-                    "average_processing_fps": round(_f(summary.get("average_processing_fps")), 2),
-                    "processing_seconds": round(_f(summary.get("processing_seconds")), 1),
-                    "risk_counts": risk_counts,
-                    "object_counts": object_counts,
-                    "noise_counts": noise_counts,
-                    "overall_risk": overall_risk(risk_counts),
-                    "events": events,
-                    "raw_name": raw_name,
-                    "stem": stem,
-                }
-                self.videos.append(video)
-                self.frames[vid] = [self._frame_row(r, w, h) for r in clean]
-            except Exception:
-                # Skip individual corrupted/incomplete videos so the rest still load
-                continue
+            object_counts: dict[str, int] = {}
+            risk_counts: dict[str, int] = {}
+            for row in clean:
+                object_counts[row["object"]] = object_counts.get(row["object"], 0) + 1
+                risk = row.get("risk", "SAFE")
+                risk_counts[risk] = risk_counts.get(risk, 0) + 1
+            raw_counts = summary.get("object_counts", {}) if analysis_available else {}
+            noise_counts = {k: v for k, v in raw_counts.items()
+                            if k not in RELEVANT_CLASSES and DISPLAY_NAMES.get(k, k) not in object_counts}
+            duration_s = max((_f(r.get("video_time_s")) for r in clean), default=0.0)
+            frames = int(_f(summary.get("frames"))) if analysis_available else 0
+            if not analysis_available:
+                duration_s, frames = self._raw_duration(raw_name, source_fps)
+            events = build_events(clean, duration_s, w, h) if analysis_available else []
+            finite_ttc = [_f(r.get("ttc_s"), math.inf) for r in clean]
+            minimum_ttc = min((v for v in finite_ttc if math.isfinite(v)), default=None)
+            has_alerting_row = any(LEVEL_PRIORITY.get(r.get("risk", "SAFE"), 0) >= 2 for r in clean)
+            vid = f"video_{len(self.videos) + 1}"
+            video = {
+                "id": vid,
+                "title": meta.get("title", raw_path.stem.replace("_", " ").title()),
+                "file": f"{stem}_processed.mp4" if processed_available else None,
+                "raw": raw_name,
+                "thumb": f"{stem}_thumb.jpg" if stem and (ROOT / "frontend" / "public" / "videos" / f"{stem}_thumb.jpg").is_file() else None,
+                "raw_available": True,
+                "processed_available": processed_available,
+                "analysis_available": analysis_available,
+                "processing_status": "analysed" if analysis_available else "not_analysed",
+                "location": meta.get("location", "Untagged route"),
+                "weather": meta.get("weather", "Unknown"),
+                "duration": mmss(duration_s),
+                "frames": frames,
+                "width": w,
+                "height": h,
+                "source_fps": source_fps,
+                "total_detections": sum(object_counts.values()) if analysis_available else 0,
+                "incidents": int(_f(summary.get("incidents"))) if has_alerting_row else 0,
+                "minimum_ttc_s": None if minimum_ttc is None else round(minimum_ttc, 3),
+                "average_processing_fps": round(_f(summary.get("average_processing_fps")), 2) if analysis_available else None,
+                "processing_seconds": round(_f(summary.get("processing_seconds")), 1) if analysis_available else None,
+                "risk_counts": risk_counts if analysis_available else {},
+                "object_counts": object_counts if analysis_available else {},
+                "noise_counts": noise_counts if analysis_available else {},
+                "overall_risk": overall_risk(risk_counts) if analysis_available else "SAFE",
+                "events": events,
+                "raw_name": raw_name,
+                "stem": stem or None,
+            }
+            self.videos.append(video)
+            self.frames[vid] = [self._frame_row(r, w, h) for r in clean] if analysis_available else []
 
         # Alerts: the highest-risk transitions, newest first.
         for v in self.videos:
@@ -336,12 +373,25 @@ class DataStore:
         except Exception:
             return fallback
 
+    def _raw_duration(self, raw_name: str, fps: float) -> tuple[float, int]:
+        try:
+            import cv2  # noqa: PLC0415
+            cap = cv2.VideoCapture(str(ROOT / "videos" / raw_name))
+            frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+            cap.release()
+            return (frames / fps if frames and fps > 0 else 0.0, frames)
+        except Exception:
+            return 0.0, 0
+
     def _frame_row(self, r: dict, w: int, h: int) -> dict:
         x1, y1, x2, y2 = (_f(r.get(k)) for k in ("x1", "y1", "x2", "y2"))
         ttc = _maybe_float(r.get("ttc_s"))
         return {
             "frame": int(_f(r.get("frame"))),
+            "frame_id": int(_f(r.get("frame_id", r.get("frame")))),
             "t": round(_f(r.get("video_time_s")), 3),
+            "source_timestamp": round(_f(r.get("source_timestamp", r.get("video_time_s"))), 3),
+            "detection_timestamp": _maybe_float(r.get("detection_timestamp")),
             "object": DISPLAY_NAMES.get(r.get("object", ""), r.get("object", "")),
             "source": r.get("source", ""),
             "conf": round(_f(r.get("confidence")), 3),
@@ -355,6 +405,7 @@ class DataStore:
             "risk": r.get("risk", "SAFE"),
             "action": r.get("action", "").replace("_", " "),
             "track_id": _track_id(r.get("track_key")),
+            "incident_image": _incident_reference(r.get("incident_image")),
         }
 
     def counts(self) -> dict:
@@ -371,7 +422,7 @@ class DataStore:
             "detections": sum(v["total_detections"] for v in self.videos),
             "incidents": sum(v["incidents"] for v in self.videos),
             "min_ttc": min((v["minimum_ttc_s"] for v in self.videos if v["minimum_ttc_s"]), default=None),
-            "avg_fps": round(sum(v["average_processing_fps"] for v in self.videos) / max(1, len(self.videos)), 2),
+            "avg_fps": round(sum(v["average_processing_fps"] or 0.0 for v in self.videos) / max(1, len(self.videos)), 2),
             "risk_counts": total,
             "object_counts": objects,
         }
